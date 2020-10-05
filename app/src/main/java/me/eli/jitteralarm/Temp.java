@@ -21,8 +21,8 @@ public class Temp extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_temp);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        final ViewPager viewPager=(ViewPager)findViewById(R.id.pager);
+        TabLayout tabLayout = findViewById(R.id.tab_layout);
+        final ViewPager viewPager= findViewById(R.id.pager);
 
         tabLayout.addTab(tabLayout.newTab().setText("Current Alarms"));
         tabLayout.addTab(tabLayout.newTab().setText("New Alarm"));
