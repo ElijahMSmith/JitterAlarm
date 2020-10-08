@@ -1,6 +1,8 @@
 package me.eli.jitteralarm.utilities;
 
-public class AlarmInfo {
+import androidx.annotation.NonNull;
+
+public class AlarmInfo implements Comparable<AlarmInfo> {
 
     private String alarmName;
     private String alarmTime;
@@ -64,9 +66,31 @@ public class AlarmInfo {
     }
 
     protected void setTriggerArray(String triggerString){
+        triggerDays = new boolean[7];
         for(int i = 0; i < 7; i++){
             triggerDays[i] = triggerString.charAt(i) == 'T';
         }
     }
 
+    @Override
+    public int compareTo(AlarmInfo other){
+        return alarmName.compareTo(other.getAlarmName());
+    }
+
+    @NonNull
+    @Override
+    public String toString(){
+        return alarmName + "; " + alarmTime + "; " + offsetTime + "; " + getTriggerString();
+    }
+
+    public boolean isIdenticalTo(Object o){
+        if(!(o instanceof AlarmInfo)) return false;
+        AlarmInfo other = (AlarmInfo) o;
+        return other.getAlarmName().equals(alarmName) && other.getAlarmTime().equals(alarmTime)
+                && other.getOffsetTime().equals(offsetTime) && other.getTriggerString().equals(this.getTriggerString());
+    }
+
+    public boolean isSameAlarmNameAs(AlarmInfo alarm){
+        return alarm.getAlarmName().equals(this.alarmName);
+    }
 }

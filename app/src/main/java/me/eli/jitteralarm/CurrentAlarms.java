@@ -1,7 +1,9 @@
-package me.eli.jitteralarm.fragments;
+package me.eli.jitteralarm;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,32 +22,29 @@ import me.eli.jitteralarm.utilities.DatabaseHelper;
 
 public class CurrentAlarms extends Fragment {
 
-    private RecyclerView recyclerView;
-    private RecyclerView.LayoutManager layoutManager;
-    private Context context;
-    private ArrayList<AlarmInfo> alarmData;
-    private DatabaseHelper helper;
+    private AlarmsAdapter adapter;
+    private DatabaseHelper db;
+
+    public CurrentAlarms(DatabaseHelper db){
+        this.db = db;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_current_alarms, container, false);
 
-        recyclerView = rootView.findViewById(R.id.recyclerView);
-        layoutManager = new LinearLayoutManager(rootView.getContext());
-        helper = new DatabaseHelper(rootView.getContext());
-
-        // Initialize with all existing alarms
-        alarmData = helper.getAllAlarms();
-
-        // Create adapter passing in existing alarms
-        AlarmsAdapter adapter = new AlarmsAdapter(alarmData);
-
-        // Attach the adapter to the recyclerview to populate items
-        recyclerView.setAdapter(adapter);
+        RecyclerView recyclerView = rootView.findViewById(R.id.recyclerView);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(rootView.getContext());
 
         // Set layout manager to position the items
         recyclerView.setLayoutManager(layoutManager);
+
+        // Create adapter passing in existing alarms
+        adapter = new AlarmsAdapter(db, getContext());
+
+        // Attach the adapter to the recyclerview to populate items
+        recyclerView.setAdapter(adapter);
 
         return rootView;
     }
@@ -53,6 +52,9 @@ public class CurrentAlarms extends Fragment {
     @Override
     public void onAttach(@NonNull Context context){
         super.onAttach(context);
-        this.context = context;
+    }
+
+    public void updateAdapter(){
+        adapter.updateAlarmSet();
     }
 }

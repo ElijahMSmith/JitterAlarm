@@ -1,6 +1,7 @@
 package me.eli.jitteralarm.utilities;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import me.eli.jitteralarm.R;
@@ -18,10 +20,19 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
 
     // Store a member variable for the contacts
     private List<AlarmInfo> alarmSet;
+    private DatabaseHelper helper;
+    private Context context;
 
     // Pass in the contact array into the constructor
-    public AlarmsAdapter(List<AlarmInfo> alarmSet) {
-        this.alarmSet = alarmSet;
+    public AlarmsAdapter(DatabaseHelper helper, Context context) {
+        // Initialize with all existing alarms
+        this.helper = helper;
+        this.context = context;
+        alarmSet = helper.getAllAlarms();
+        Log.d("test", "Logging retrieved alarms");
+        for(AlarmInfo alarm : alarmSet){
+            Log.d("test", alarm.toString());
+        }
     }
 
     // Usually involves inflating a layout from XML and returning the holder
@@ -30,6 +41,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
     public AlarmsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
+        helper = new DatabaseHelper(context);
 
         // Inflate the custom layout
         View alarmView = inflater.inflate(R.layout.adapter_listing, parent, false);
@@ -84,10 +96,61 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
             // to access the context from any ViewHolder instance.
             super(itemView);
 
-            listedAlarmName = (TextView) itemView.findViewById(R.id.listedAlarmName);
-            listedAlarmTime = (TextView) itemView.findViewById(R.id.listedAlarmTime);
-            editListedAlarmButton = (Button) itemView.findViewById(R.id.editListedAlarmButton);
+            listedAlarmName = itemView.findViewById(R.id.listedAlarmName);
+            listedAlarmTime = itemView.findViewById(R.id.listedAlarmTime);
+            editListedAlarmButton = itemView.findViewById(R.id.editListedAlarmButton);
         }
     }
+
+    public void updateAlarmSet(){
+        ArrayList<AlarmInfo> dbAlarms = helper.getAllAlarms();
+        combineToAlarmSet(dbAlarms);
+        notifyDataSetChanged();
+    }
+
+    private void combineToAlarmSet(ArrayList<AlarmInfo> retrievedSet){
+        int alarmSetPosition = 0, retrievedSetPosition = 0, iterations = Math.max(alarmSet.size(), retrievedSet.size());
+
+        //Runs until we've compared all alarms in the alarmSet
+        while(alarmSetPosition < alarmSet.size()){
+            if(retrievedSetPosition < retrievedSet.size()){ //Still alarms in retrievedSet to compare with
+                AlarmInfo rsAlarm = retrievedSet.get(retrievedSetPosition);
+                AlarmInfo asAlarm = alarmSet.get(alarmSetPosition);
+                int compVal = rsAlarm.compareTo(asAlarm);
+
+                if(compVal < 0){
+                    //rsAlarm is smaller, needs to be inserted in front of asAlarm
+                    //Insert, move one through both
+                    alarmSet.add(alarmSetPosition, asAlarm);
+                    alarmSetPosition++;
+                    retrievedSetPosition++;
+                } else if(compVal == 0){
+                    //Same alarm, skip both
+                    alarmSetPosition++;
+                    retrievedSetPosition++;
+                } else {
+                    //rsAlarm doesn't fit in front of asAlarm, move one through alarmSet
+                    alarmSetPosition++;
+                }
+            }
+        }
+
+        //More left in retrieved data set, add all remaining to alarmSet
+        if(retrievedSetPosition < retrievedSet.size()){
+            for(;retrievedSetPosition < retrievedSet.size(); retrievedSetPosition++){
+                alarmSet.add(retrievedSet.get(retrievedSetPosition++)); //Adds then moves indexes after operation finishes
+            }
+        }
+    }
+
+    //TODO: Remove alarm from database and from adapter
+    /*
+
+    list.remove(position);
+    recycler.removeViewAt(position);
+    mAdapter.notifyItemRemoved(position);
+    mAdapter.notifyItemRangeChanged(position, list.size());
+
+     */
 
 }

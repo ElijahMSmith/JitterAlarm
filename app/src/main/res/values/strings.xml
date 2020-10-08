@@ -31,4 +31,9 @@
     <string name="anything_you_want">Anything You Want!</string>
     <string name="edit">Edit</string>
     <string name="placeholder">PLACEHOLDER</string>
+    <string name="editAlarm">Edit Alarm</string>
+    <string name="updateAlarm">Update Alarm</string>
+    <string name="cancelChanges">Cancel Changes</string>
+    <string name="deleteAlarm">Delete Alarm</string>
+    <string name="confirmDeletion">Confirm Deletion</string>
 </resources>

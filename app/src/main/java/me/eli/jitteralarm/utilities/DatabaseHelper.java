@@ -66,7 +66,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
         AlarmInfo retrievedAlarm = null;
 
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE (" + ALARM_NAME + " = '" + alarmName + "'", null);
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE " + ALARM_NAME + " = '" + alarmName + "'", null);
 
         if(cursor.moveToFirst()){
             String retrievedName = cursor.getString(cursor.getColumnIndex(ALARM_NAME));
@@ -91,7 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean alarmExistsInDB(String alarmName){
         SQLiteDatabase db = getReadableDatabase();
 
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE (" + ALARM_NAME + " = '" + alarmName + "'", null);
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE " + ALARM_NAME + " = '" + alarmName + "'", null);
         boolean exists = cursor.moveToFirst();
         cursor.close();
 

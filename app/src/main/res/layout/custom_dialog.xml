@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@drawable/background">
-
+    android:orientation="vertical">
     <TextView
-        android:id="@+id/alarmNameTitle"
+        android:id="@+id/dfNameTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
@@ -17,7 +16,7 @@
         android:textColor="#ffffff"/>
 
     <EditText
-        android:id="@+id/editAlarmName"
+        android:id="@+id/dfNameInput"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
@@ -30,7 +29,7 @@
         android:textColor="#ffffff"/>
 
     <TextView
-        android:id="@+id/alarmTimeTitle"
+        android:id="@+id/dfTimeTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
@@ -41,7 +40,7 @@
         android:textSize="25sp" />
 
     <EditText
-        android:id="@+id/editAlarmTime"
+        android:id="@+id/dfTimeInput"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
@@ -54,7 +53,7 @@
         android:textColor="#ffffff"/>
 
     <TextView
-        android:id="@+id/offsetTitle"
+        android:id="@+id/dfOffsetTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
@@ -65,7 +64,7 @@
         android:textColor="#ffffff"/>
 
     <EditText
-        android:id="@+id/editOffset"
+        android:id="@+id/dfOffsetInput"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
@@ -87,11 +86,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/sundaySwitch"
+                android:id="@+id/dfSundaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/sundayTitle"
+                android:id="@+id/dfSundayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -105,11 +104,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/mondaySwitch"
+                android:id="@+id/dfMondaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/mondayTitle"
+                android:id="@+id/dfMondayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -123,11 +122,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/tuesdaySwitch"
+                android:id="@+id/dfTuesdaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/tuesdayTitle"
+                android:id="@+id/dfTuesdayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -141,11 +140,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/wednesdaySwitch"
+                android:id="@+id/dfWednesdaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/wednesdayTitle"
+                android:id="@+id/dfWednesdayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -159,11 +158,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/thursdaySwitch"
+                android:id="@+id/dfThursdaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/thursdayTitle"
+                android:id="@+id/dfThursdayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -177,11 +176,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/fridaySwitch"
+                android:id="@+id/dfFridaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/fridayTitle"
+                android:id="@+id/dfFridayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -195,11 +194,11 @@
             android:gravity="center_horizontal">
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/saturdaySwitch"
+                android:id="@+id/dfSaturdaySwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/saturdayTitle"
+                android:id="@+id/dfSaturdayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
@@ -207,36 +206,4 @@
 
         </TableRow>
     </TableLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:orientation="vertical">
-
-        <Button
-            android:id="@+id/clearDataButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="@string/clear_all"
-            android:textColor="#ffffff"
-            android:textSize="18sp"
-            android:background="@drawable/alarm_button"
-            android:onClick="clearData"/>
-
-        <Button
-            android:id="@+id/setAlarmButton"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal|center"
-            android:text="@string/create_alarm"
-            android:textColor="#ffffff"
-            android:textSize="18sp"
-            android:background="@drawable/alarm_button"
-            android:onClick="createAlarm"/>
-
-    </LinearLayout>
-
 </LinearLayout>
