@@ -15,7 +15,7 @@ import me.eli.jitteralarm.utilities.AlarmInfo;
 import me.eli.jitteralarm.utilities.DatabaseHelper;
 import me.eli.jitteralarm.utilities.FragPageAdapter;
 
-public class Temp extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     //Reference to fragment with updating alarm list
     //No reference to New Alarm frag needed at this time
@@ -41,7 +41,7 @@ public class Temp extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_temp);
+        setContentView(R.layout.activity_main);
 
         db = new DatabaseHelper(getApplicationContext());
 

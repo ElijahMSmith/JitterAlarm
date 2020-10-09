@@ -11,28 +11,32 @@ import java.util.List;
 
 public class FragPageAdapter extends FragmentPagerAdapter {
 
+    //Holds both of our fragment pages
     private List<Fragment> fragList = new ArrayList<>();
 
     public FragPageAdapter(FragmentManager fm) {
         super(fm);
     }
 
+    //Adds some new fragment to the FragPageAdapter
     public void addFragment(Fragment fragment){
         fragList.add(fragment);
     }
 
+    //Get the fragment at a certain tab position. Used to get reference from activity.
     @NonNull
     @Override
     public Fragment getItem(int position) {
         return fragList.get(position);
     }
 
-    // this counts total number of tabs
+    //Return the total number of tabs in the FragPageAdapter
     @Override
     public int getCount() {
         return fragList.size();
     }
 
+    //Creates the tab label for the each fragment page
     @Override
     public CharSequence getPageTitle(int position){
         switch(position){

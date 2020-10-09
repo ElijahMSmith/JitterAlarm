@@ -22,6 +22,7 @@ import me.eli.jitteralarm.utilities.DatabaseHelper;
 
 public class AlarmDetailsDialogFragment extends DialogFragment {
 
+    //Storing original alarm, db access, and CurrentAlarms fragment to return to later
     private AlarmInfo originalState;
     private DatabaseHelper db;
     private CurrentAlarms alarmsList;
@@ -36,13 +37,12 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Use the Builder class for convenient dialog construction
+        //Set up fragment
         AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
-        // Get the layout inflater
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         final View rootView = inflater.inflate(R.layout.custom_dialog, null);
 
-        //Get ref to components
+        //Get reference to components
         final SwitchMaterial dfSundaySwitch = rootView.findViewById(R.id.dfSundaySwitch);
         final SwitchMaterial dfMondaySwitch = rootView.findViewById(R.id.dfMondaySwitch);
         final SwitchMaterial dfTuesdaySwitch = rootView.findViewById(R.id.dfTuesdaySwitch);
@@ -68,13 +68,15 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
         dfTimeInput.setText(originalState.getAlarmTime());
         dfOffsetInput.setText(originalState.getOffsetTime());
 
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
+        //Set DialogBuilder to hold our complete layout
         builder.setView(rootView)
-        .setMessage(R.string.editAlarm)
+        .setMessage(R.string.editAlarm) //Set properties of dialog
         .setPositiveButton(R.string.updateAlarm, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+
                 //TODO: Still need to check for alarm validity
+
+                //Take all data for this alarm, changed or not, and compile it into an AlarmInfo object
                 boolean[] newTriggers = {dfSundaySwitch.isChecked(),
                                         dfMondaySwitch.isChecked(),
                                         dfTuesdaySwitch.isChecked(),
@@ -87,11 +89,12 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                                                     dfOffsetInput.getText().toString(),
                                                     newTriggers);
 
+                //If the new alarm is identical to the original alarm, nothing is changed
                 if(withEdits.isIdenticalTo(originalState)){
                     //No changes made, don't submit to db
                     dialog.dismiss();
                     Toast.makeText(getContext(), "No changes were made!", Toast.LENGTH_SHORT).show();
-                } else {
+                } else { //Otherwise, need to replace old alarm with new one
 
                     //TODO: When implementing alarms running, will need to cancel the original alarm (which should be running)
 
@@ -102,19 +105,21 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     db.addAlarm(withEdits);
                     //Refresh the adapter
                     alarmsList.updateAdapter();
+                    Toast.makeText(rootView.getContext(), "Alarm Updated", Toast.LENGTH_SHORT).show();
                 }
 
-                dialog.dismiss();
+                dialog.dismiss(); //Now we exit the dialog
             }
         })
         .setNeutralButton(R.string.cancelChanges, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                //If they don't want to proceed, cancel out of the dialog
                 dialog.cancel();
-                //Do nothing more!
             }
         })
         .setNegativeButton(R.string.deleteAlarm, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                //User wants to delete originalState alarm. Exit dialog and return to CurrentAlarms fragment to delete
                 dialog.dismiss();
                 alarmsList.confirmDeletion(originalState);
             }

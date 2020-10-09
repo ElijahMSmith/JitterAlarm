@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -97,6 +98,7 @@ public class CurrentAlarms extends Fragment {
                 //Delete from everything
                 deleteAlarm(alarmToDelete);
                 dialog.dismiss();
+                Toast.makeText(context, "Alarm Deleted", Toast.LENGTH_SHORT).show();
             }
         })
         .setNegativeButton(R.string.cancelChanges, new DialogInterface.OnClickListener() {
@@ -116,25 +118,25 @@ public class CurrentAlarms extends Fragment {
         for(int i = 0; i < triggers.length; i++){
             switch(i){
                 case 0:
-                    stringBuilder.append("Sunday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Sunday, ");
                     break;
                 case 1:
-                    stringBuilder.append("Monday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Monday, ");
                     break;
                 case 2:
-                    stringBuilder.append("Tuesday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Tuesday, ");
                     break;
                 case 3:
-                    stringBuilder.append("Wednesday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Wednesday, ");
                     break;
                 case 4:
-                    stringBuilder.append("Thursday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Thursday, ");
                     break;
                 case 5:
-                    stringBuilder.append("Friday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Friday, ");
                     break;
                 case 6:
-                    stringBuilder.append("Saturday, ");
+                    stringBuilder.append(!triggers[i] ? "" : "Saturday, ");
                     break;
             }
         }

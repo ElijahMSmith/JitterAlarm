@@ -4,8 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import me.eli.jitteralarm.Temp;
-
 /**
  * Created by Eli on 1/19/2016.
  */

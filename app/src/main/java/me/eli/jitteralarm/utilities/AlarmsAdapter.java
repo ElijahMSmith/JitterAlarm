@@ -1,7 +1,6 @@
 package me.eli.jitteralarm.utilities;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +10,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import me.eli.jitteralarm.CurrentAlarms;
@@ -19,19 +17,22 @@ import me.eli.jitteralarm.R;
 
 public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder> {
 
-    // Store a member variable for the contacts
+    //Stores the full set of alarms in our system, db access, and a reference to return to CurrentAlarms
     private List<AlarmInfo> alarmSet;
     private DatabaseHelper helper;
     private CurrentAlarms alarmsListFrag;
 
-    // Pass in the contact array into the constructor
+    //Pass in our references
     public AlarmsAdapter(DatabaseHelper helper, CurrentAlarms alarmsListFrag) {
-        // Initialize with all existing alarms
         this.alarmsListFrag = alarmsListFrag;
         this.helper = helper;
+
+        //Initialize alarmSet with all existing alarms
         alarmSet = helper.getAllAlarms();
 
         /*
+        //For bug testing
+
         Log.d("test", "Logging retrieved alarms");
         for(AlarmInfo alarm : alarmSet){
             Log.d("test", alarm.toString());
@@ -44,22 +45,20 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
     public AlarmsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
-        helper = new DatabaseHelper(context);
-
-        // Inflate the custom layout
+        //Inflate our unique adapter listing layout
         View alarmView = inflater.inflate(R.layout.adapter_listing, parent, false);
 
-        // Return a new holder instance
+        // Return a new holder instance for this listing
         return new ViewHolder(alarmView);
     }
 
-    // Involves populating data into the item through holder
+    //Sets views in this ViewHolder to show data for the alarm it's representing
     @Override
     public void onBindViewHolder(AlarmsAdapter.ViewHolder holder, final int position) {
-        // Get the data model based on position
+        //Get the AlarmInfo for the particular position
         AlarmInfo alarm = alarmSet.get(position);
 
-        // Set item views based on your views and data model
+        //Set this ViewHolder to show alarm details
         TextView alarmName = holder.listedAlarmName;
         alarmName.setText(alarm.getAlarmName());
         TextView alarmTime = holder.listedAlarmTime;
@@ -68,6 +67,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
         editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Set button to send us to the edit dialog AlarmDetailsDialogFragment through CurrentAlarms fragment method
                 alarmsListFrag.openEditDialog(alarmSet.get(position));
             }
         });
@@ -79,46 +79,53 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
         return alarmSet.size();
     }
 
-    // Provide a direct reference to each of the views within a data item
-    // Used to cache the views within the item layout for fast access
+    //Our Unique ViewHolder for each RecyclerView listing
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        // Your holder should contain a member variable
-        // for any view that will be set as you render a row
+        //Important components of each ViewHolder
         public TextView listedAlarmName;
         public TextView listedAlarmTime;
         public Button editListedAlarmButton;
 
-        // We also create a constructor that accepts the entire item row
-        // and does the view lookups to find each subview
+        //Links layout elements to fields here
         public ViewHolder(View itemView) {
-            // Stores the itemView in a public final member variable that can be used
-            // to access the context from any ViewHolder instance.
             super(itemView);
-
             listedAlarmName = itemView.findViewById(R.id.listedAlarmName);
             listedAlarmTime = itemView.findViewById(R.id.listedAlarmTime);
             editListedAlarmButton = itemView.findViewById(R.id.editListedAlarmButton);
         }
     }
 
+    //Updates alarmSet list to reflect whatever change was made to the database
     public void updateAlarmSet(){
-        ArrayList<AlarmInfo> dbAlarms = helper.getAllAlarms();
-        combineToAlarmSet(dbAlarms);
-        notifyDataSetChanged();
+        //Retrieve the up-to-date set of alarms from our db and assign that to our alarmSet reference
+        alarmSet = helper.getAllAlarms(); //Our out of data alarmSet can now be garbage collected
+        notifyDataSetChanged(); //Update to reflect the changes in our adapter
     }
 
-    private void combineToAlarmSet(ArrayList<AlarmInfo> retrievedSet){
-        int alarmSetPosition = 0, retrievedSetPosition = 0, iterations = Math.max(alarmSet.size(), retrievedSet.size());
 
-        //Runs until we've compared all alarms in the alarmSet
+    //The following was an elaborate scheme of mine to try to be clever. Merge the two lists without adding duplicates, thereby saving space.
+    //Update: I was not being clever. We already have two lists we've created and there's no getting around that. Nor did it really work as intended anyways (but we could have fixed that).
+    //I can just set my alarmSet to the database alarmSet since that's the up to date version.
+    //We're not adding any new alarms to either list, and again one list is garbage collected at the end.
+    //Below is being kept temporarily as a testament to stupidity and how one moment of inspiration can make you look brilliant and idiotic at the same time.
+
+    /*
+    //Keeps alarmSet up to date with database of all alarms
+    //Takes in a list retrievedSet of all alarms found in the database and merges them into alarmSet without duplicates
+    private void combineToAlarmSet(ArrayList<AlarmInfo> retrievedSet){
+        int alarmSetPosition = 0, retrievedSetPosition = 0; //Start our iteration at the front of both lists
+
+        //Run until we've compared all alarms in the alarmSet
         while(alarmSetPosition < alarmSet.size()){
             if(retrievedSetPosition < retrievedSet.size()){ //Still alarms in retrievedSet to compare with
+                //Get the alarm at respective indices for both lists
                 AlarmInfo rsAlarm = retrievedSet.get(retrievedSetPosition);
                 AlarmInfo asAlarm = alarmSet.get(alarmSetPosition);
+                //Compares the alarms to figure out their order in the alarmSet
                 int compVal = rsAlarm.compareTo(asAlarm);
 
                 if(compVal < 0){
-                    //rsAlarm is smaller, needs to be inserted in front of asAlarm
+                    //Alarm from retrievedSet is smaller, needs to be inserted in front of asAlarm
                     //Insert, move one through both
                     alarmSet.add(alarmSetPosition, asAlarm);
                     alarmSetPosition++;
@@ -128,21 +135,21 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
                     alarmSetPosition++;
                     retrievedSetPosition++;
                 } else {
-                    //rsAlarm doesn't fit in front of asAlarm, move one through alarmSet
+                    //rsAlarm doesn't fit in front of asAlarm, keep looking through alarmSet without inserting rsAlarm yet
                     alarmSetPosition++;
                 }
             }
         }
 
-        //More left in retrieved data set, add all remaining to alarmSet
-        if(retrievedSetPosition < retrievedSet.size()){
-            for(;retrievedSetPosition < retrievedSet.size(); retrievedSetPosition++){
-                alarmSet.add(retrievedSet.get(retrievedSetPosition++)); //Adds then moves indexes after operation finishes
-            }
+        //We've finished looking through the alarmset, but there might still be alarms left to add from the retrievedSet
+        //We need to add all these remaining alarms to the alarmSet
+        for(;retrievedSetPosition < retrievedSet.size(); retrievedSetPosition++){
+            alarmSet.add(retrievedSet.get(retrievedSetPosition++)); //Adds then moves indexes after operation finishes
         }
     }
+    */
 
-    //Delete alarm from db, alarm list, and return position in the alarmSet for further action
+    //Deletes the alarm from the database and from the alarmSet, returning the position the alarm occupied in the alarmSet if found (-1 if not found)
     public int removeAlarm(AlarmInfo alarm){
         helper.deleteAlarm(alarm);
         int position = alarmSet.indexOf(alarm);
@@ -150,6 +157,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
         return position;
     }
 
+    //Returns the size of the alarmSet
     public int getAlarmSetSize(){
         return alarmSet.size();
     }

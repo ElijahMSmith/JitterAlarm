@@ -19,7 +19,7 @@ import androidx.core.app.NotificationCompat;
 import java.util.Random;
 
 import me.eli.jitteralarm.R;
-import me.eli.jitteralarm.Temp;
+import me.eli.jitteralarm.MainActivity;
 
 /**
  * Created by Eli on 1/7/2016.
@@ -116,7 +116,7 @@ public class BootUpReceiver extends BroadcastReceiver {
         if(notificationManager != null)
             notificationManager.createNotificationChannel(channel);
 
-        Intent startMain = new Intent(context, Temp.class);
+        Intent startMain = new Intent(context, MainActivity.class);
         startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent startMainPI = PendingIntent.getActivity(context, 0, startMain, 0);
 
