@@ -4,11 +4,9 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,19 +18,18 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.util.Objects;
 
 import me.eli.jitteralarm.utilities.AlarmInfo;
-import me.eli.jitteralarm.utilities.AlarmsAdapter;
 import me.eli.jitteralarm.utilities.DatabaseHelper;
 
 public class AlarmDetailsDialogFragment extends DialogFragment {
 
     private AlarmInfo originalState;
     private DatabaseHelper db;
-    private AlarmsAdapter alarmsAdapter;
+    private CurrentAlarms alarmsList;
 
-    public AlarmDetailsDialogFragment(AlarmInfo toEditAlarm, DatabaseHelper db, AlarmsAdapter alarmsAdapter){
-        originalState = toEditAlarm;
+    public AlarmDetailsDialogFragment(AlarmInfo alarmToEdit, DatabaseHelper db, CurrentAlarms alarmsList){
+        originalState = alarmToEdit;
         this.db = db;
-        this.alarmsAdapter = alarmsAdapter;
+        this.alarmsList = alarmsList;
     }
 
     @SuppressLint("InflateParams")
@@ -77,9 +74,7 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
         .setMessage(R.string.editAlarm)
         .setPositiveButton(R.string.updateAlarm, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                //TODO: Take alarm with previous name, remove it, add one with all details here
-                    //TODO: Still need to check for alarm validity
-
+                //TODO: Still need to check for alarm validity
                 boolean[] newTriggers = {dfSundaySwitch.isChecked(),
                                         dfMondaySwitch.isChecked(),
                                         dfTuesdaySwitch.isChecked(),
@@ -97,12 +92,16 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     dialog.dismiss();
                     Toast.makeText(getContext(), "No changes were made!", Toast.LENGTH_SHORT).show();
                 } else {
+
+                    //TODO: When implementing alarms running, will need to cancel the original alarm (which should be running)
+
                     //Take out originalState from db
-                    //Insert withEdits to db
-                    //Update alarmsAdapter
-                    db.deleteAlarm(originalState);
+                    alarmsList.deleteAlarm(originalState);
+
+                    //Add new form to the database
                     db.addAlarm(withEdits);
-                    alarmsAdapter.updateAlarmSet();
+                    //Refresh the adapter
+                    alarmsList.updateAdapter();
                 }
 
                 dialog.dismiss();
@@ -116,17 +115,8 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
         })
         .setNegativeButton(R.string.deleteAlarm, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                //TODO: Dismiss this dialog, build another one with just a confirmation message and cancel/delete buttons
-
-
-                //TODO: RESUME FROM HERE. Need to figure out what I'm going to do about confirmations.
-                //Could pass a reference to Temp class in constructor, then after dismissing this dialog (no action),
-                    //Have a method in temp that I call from here create the confirmation dialog (pass it the originalState alarm)
-                    //That dialog will have cancel/delete only, cancelling does nothing, deleting removes originalState from db.
-                    //Make sure to present which alarm they are deleting (not the one they are editing)
-
-
-                //TODO: CREATE DIALOG IN TEMP WHEN EDIT BUTTON IN ADAPTER LISTING IS PRESSED
+                dialog.dismiss();
+                alarmsList.confirmDeletion(originalState);
             }
         });
         // Create the AlertDialog object and return it

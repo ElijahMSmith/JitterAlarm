@@ -1,6 +1,7 @@
 package me.eli.jitteralarm;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
 import androidx.viewpager.widget.ViewPager;
 
 import android.os.Bundle;
@@ -43,12 +44,13 @@ public class Temp extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.tab_layout);
         final ViewPager viewPager= findViewById(R.id.pager);
 
+        //TODO: FIx NPE: Attempt to invoke method newTab on null object reference
         tabLayout.addTab(tabLayout.newTab().setText("Current Alarms"));
         tabLayout.addTab(tabLayout.newTab().setText("New Alarm"));
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
         final FragPageAdapter fragPageAdapter = new FragPageAdapter(getSupportFragmentManager());
-        fragPageAdapter.addFragment(new CurrentAlarms(db));
+        fragPageAdapter.addFragment(new CurrentAlarms(db, getSupportFragmentManager()));
         fragPageAdapter.addFragment(new NewAlarm());
         viewPager.setAdapter(fragPageAdapter);
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
@@ -151,4 +153,5 @@ public class Temp extends AppCompatActivity {
         editAlarmTime = findViewById(R.id.editAlarmTime);
         editAlarmOffset = findViewById(R.id.editOffset);
     }
+
 }

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.eli.jitteralarm.CurrentAlarms;
 import me.eli.jitteralarm.R;
 
 public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder> {
@@ -21,13 +22,13 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
     // Store a member variable for the contacts
     private List<AlarmInfo> alarmSet;
     private DatabaseHelper helper;
-    private Context context;
+    private CurrentAlarms alarmsListFrag;
 
     // Pass in the contact array into the constructor
-    public AlarmsAdapter(DatabaseHelper helper, Context context) {
+    public AlarmsAdapter(DatabaseHelper helper, CurrentAlarms alarmsListFrag) {
         // Initialize with all existing alarms
+        this.alarmsListFrag = alarmsListFrag;
         this.helper = helper;
-        this.context = context;
         alarmSet = helper.getAllAlarms();
         Log.d("test", "Logging retrieved alarms");
         for(AlarmInfo alarm : alarmSet){
@@ -52,7 +53,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
 
     // Involves populating data into the item through holder
     @Override
-    public void onBindViewHolder(AlarmsAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(AlarmsAdapter.ViewHolder holder, final int position) {
         // Get the data model based on position
         AlarmInfo alarm = alarmSet.get(position);
 
@@ -65,11 +66,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
         editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*
-
-                TODO: ADD ACTION TO EDIT BUTTON
-
-                 */
+                alarmsListFrag.openEditDialog(alarmSet.get(position));
             }
         });
     }
@@ -143,14 +140,16 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
         }
     }
 
-    //TODO: Remove alarm from database and from adapter
-    /*
+    //Delete alarm from db, alarm list, and return position in the alarmSet for further action
+    public int removeAlarm(AlarmInfo alarm){
+        helper.deleteAlarm(alarm);
+        int position = alarmSet.indexOf(alarm);
+        alarmSet.remove(alarm);
+        return position;
+    }
 
-    list.remove(position);
-    recycler.removeViewAt(position);
-    mAdapter.notifyItemRemoved(position);
-    mAdapter.notifyItemRangeChanged(position, list.size());
-
-     */
+    public int getAlarmSetSize(){
+        return alarmSet.size();
+    }
 
 }
