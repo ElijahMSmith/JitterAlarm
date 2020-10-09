@@ -29,12 +29,14 @@ import me.eli.jitteralarm.utilities.DatabaseHelper;
 
 public class CurrentAlarms extends Fragment {
 
+    //All references we're going to need later
     private RecyclerView recycler;
     private AlarmsAdapter adapter;
     private DatabaseHelper db;
     private FragmentManager supportFragManager;
     private Context context;
 
+    //Store the DB helper created in the activity and the SupportFragmentManager also retrieved from the activity
     public CurrentAlarms(DatabaseHelper db, FragmentManager supportFragManager){
         this.db = db;
         this.supportFragManager = supportFragManager;
@@ -43,15 +45,17 @@ public class CurrentAlarms extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        //Create the fragment
         View rootView = inflater.inflate(R.layout.fragment_current_alarms, container, false);
 
+        //Set up the recycler view that will hold alarms
         recycler = rootView.findViewById(R.id.recyclerView);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(rootView.getContext());
 
         // Set layout manager to position the items
         recycler.setLayoutManager(layoutManager);
 
-        // Create adapter passing in existing alarms
+        // Create adapter, passing in database access and a reference back here
         adapter = new AlarmsAdapter(db, this);
 
         // Attach the adapter to the recyclerview to populate items
@@ -63,31 +67,30 @@ public class CurrentAlarms extends Fragment {
     @Override
     public void onAttach(@NonNull Context context){
         super.onAttach(context);
-        this.context = context;
+        this.context = context; //Store context for later
     }
 
+    //Called by edit button in an adapter listing with the alarm to be edited
+    //Opens an AlertDialog that allows user to change values of that alarm then submit, cancel, or delete them.
     public void openEditDialog(AlarmInfo alarmToEdit){
         DialogFragment editAlarmFragment = new AlarmDetailsDialogFragment(alarmToEdit, db, this);
         editAlarmFragment.show(supportFragManager, "editAlarmInformation");
     }
 
+    //Opens another dialog to confirm the user wants to delete the alarm (from the edit dialog)
+    //May be removed at a later date if it's more of a waste than I expect it will be.
     @SuppressLint("InflateParams")
     protected void confirmDeletion(final AlarmInfo alarmToDelete){
 
-        //Have a method in temp that I call from here create the confirmation dialog (pass it the originalState alarm)
-        //That dialog will have cancel/delete only, cancelling does nothing, deleting removes originalState from db.
-        //Make sure to present which alarm they are deleting (not the one they are editing)
-
+        //Creates a new alert dialog to display alarm information (immutable)
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         // Get the layout inflater
         LayoutInflater inflater = requireActivity().getLayoutInflater();
 
         // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
         View dialogRootView = inflater.inflate(R.layout.custom_confirmation_dialog, null);
-        builder.setView(dialogRootView)
+        builder.setView(dialogRootView) //Set up dialog from here on
         .setTitle("CONFIRM DELETION OF THIS ALARM")
-        // Add action buttons
         .setPositiveButton(R.string.confirmDeletion, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
@@ -102,11 +105,12 @@ public class CurrentAlarms extends Fragment {
             }
         });
 
+        //Set views in our layout to be alarm values
         ((TextView)dialogRootView.findViewById(R.id.confirmTitle)).setText(alarmToDelete.getAlarmName());
         ((TextView)dialogRootView.findViewById(R.id.confirmTime)).setText(alarmToDelete.getAlarmTime());
         ((TextView)dialogRootView.findViewById(R.id.confirmOffset)).setText(alarmToDelete.getOffsetTime());
 
-        //Convert trigger days into textview form
+        //Convert trigger days into the form a TextView can display
         boolean[] triggers = alarmToDelete.getTriggerArray();
         StringBuilder stringBuilder = new StringBuilder();
         for(int i = 0; i < triggers.length; i++){
@@ -138,21 +142,25 @@ public class CurrentAlarms extends Fragment {
         //Will either be >2 or will be 0 (no days added, which should be filtered out eventually. TODO)
         if(stringBuilder.length() > 2)
             stringBuilder.setLength(stringBuilder.length() - 2);
-
+        //Last one
         ((TextView)dialogRootView.findViewById(R.id.confirmTriggers)).setText(stringBuilder.toString());
 
+        //Create and show dialog
         AlertDialog confirmAlert = builder.create();
         confirmAlert.show();
     }
 
-
+    //Called from everywhere, forces the adapter to refresh its contents any time a change is made from somewhere else
     public void updateAdapter(){
         adapter.updateAlarmSet();
     }
 
+    //Delete an alarm from the system, removing it from both the database and from the adapter.
     public void deleteAlarm(AlarmInfo alarm){
         //Deletes alarm from the list and from the db, position it was in is returned (-1 if not in list)
         int position = adapter.removeAlarm(alarm);
+
+        //If the alarm WAS in the alarm set, remove it from the entire RecyclerView as well
         if(position >= 0){
             recycler.removeViewAt(position);
             adapter.notifyItemRemoved(position);

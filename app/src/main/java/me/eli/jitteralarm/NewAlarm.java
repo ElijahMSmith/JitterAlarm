@@ -13,6 +13,9 @@ import android.view.ViewGroup;
 
 public class NewAlarm extends Fragment {
 
+    //This fragment mostly operates in the activity because the buttons connect to it, so we might as well do all our creation there.
+    //Other than that, just standard fragment creation here.
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {

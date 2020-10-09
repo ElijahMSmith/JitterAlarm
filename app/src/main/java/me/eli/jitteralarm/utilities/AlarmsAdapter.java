@@ -30,13 +30,15 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
         this.alarmsListFrag = alarmsListFrag;
         this.helper = helper;
         alarmSet = helper.getAllAlarms();
+
+        /*
         Log.d("test", "Logging retrieved alarms");
         for(AlarmInfo alarm : alarmSet){
             Log.d("test", alarm.toString());
         }
+         */
     }
 
-    // Usually involves inflating a layout from XML and returning the holder
     @NonNull
     @Override
     public AlarmsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
