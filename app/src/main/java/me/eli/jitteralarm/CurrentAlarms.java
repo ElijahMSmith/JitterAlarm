@@ -170,4 +170,83 @@ public class CurrentAlarms extends Fragment {
         }
 
     }
+
+    //Validates inputs to check if they are all valid.
+    //If everything is acceptable, return true
+    //If something is amiss, return false and print to the user what's wrong.
+    //submittingNew is true if alarm is being created for the first time
+        //submittingNew is false if the user is editing an alarm and we want to validate their new details
+    public boolean validateAlarm(AlarmInfo alarmToCheck, boolean submittingNew){
+        String alarmName = alarmToCheck.getAlarmName().trim();
+        String alarmTime = alarmToCheck.getAlarmTime().trim();
+        String alarmOffset = alarmToCheck.getOffsetTime().trim();
+
+        //Checks alarmName against existing db alarms
+        //If we're submitting for the first time, we want to check for existing alarms of same name
+        //If we're editing this alarm, of course the original is going to exist, so we skip this step
+        if(submittingNew && db.alarmExistsInDB(alarmName)){
+            Toast.makeText(context, "This alarm already exists!", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        //Validate alarmTime
+        String[] splitTime = alarmTime.split("[: ]");
+        if(splitTime.length != 3){
+            Toast.makeText(context, "Please use the format HH:MM AM/PM for alarm time", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        int hours, minutes;
+        try{
+            hours = Integer.parseInt(splitTime[0]);
+            minutes = Integer.parseInt(splitTime[1]);
+        } catch(NumberFormatException E){
+            Toast.makeText(context, "Numeric inputs expected for alarm time", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        if(hours < 1 || hours > 12){
+            Toast.makeText(context, "Alarm time hour invalid. Accepted values: 1-12", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if(minutes < 0 || minutes >= 60){
+            Toast.makeText(context, "Alarm time minutes invalid. Accepted values: 0-59", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if(!(splitTime[2].equalsIgnoreCase("am") || splitTime[2].equalsIgnoreCase("pm"))){
+            Toast.makeText(context, "Please specify AM/PM alarm time", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        //Validate alarmOffset
+        splitTime = alarmOffset.split(":");
+        if(splitTime.length != 3){
+            Toast.makeText(context, "Please use the format HH:MM:SS for alarm offset", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        int offsetHours, offsetMinutes, offsetSeconds;
+        try{
+            offsetHours = Integer.parseInt(splitTime[0]);
+            offsetMinutes = Integer.parseInt(splitTime[1]);
+            offsetSeconds = Integer.parseInt(splitTime[2]);
+        } catch(NumberFormatException E){
+            Toast.makeText(context, "Numeric inputs expected for alarm offset", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        if(offsetHours < 0 || offsetHours > 24){
+            Toast.makeText(context, "Alarm offset hour invalid. Accepted values: 0-24", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if(offsetMinutes < 0 || offsetMinutes >= 60){
+            Toast.makeText(context, "Alarm offset minutes invalid. Accepted values: 0-59", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if(offsetSeconds < 0 || offsetSeconds >= 60){
+            Toast.makeText(context, "Alarm offset seconds invalid. Accepted values: 0-59", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        //We're not going to validate the trigger array. If they want to leave every day off, it effectively disables the alarm, which is fine with us.
+
+        //Return our valid alarm
+        return true;
+    }
 }

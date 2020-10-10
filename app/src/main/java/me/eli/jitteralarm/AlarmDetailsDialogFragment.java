@@ -84,6 +84,8 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                                         dfThursdaySwitch.isChecked(),
                                         dfFridaySwitch.isChecked(),
                                         dfSaturdaySwitch.isChecked()};
+
+                //Either builds alarm successfully or tells the user what they did wrong and returns null
                 AlarmInfo withEdits = new AlarmInfo(dfNameInput.getText().toString(),
                                                     dfTimeInput.getText().toString(),
                                                     dfOffsetInput.getText().toString(),
@@ -94,7 +96,7 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     //No changes made, don't submit to db
                     dialog.dismiss();
                     Toast.makeText(getContext(), "No changes were made!", Toast.LENGTH_SHORT).show();
-                } else { //Otherwise, need to replace old alarm with new one
+                } else if(alarmsList.validateAlarm(withEdits, false)){ //Otherwise, if the new details are acceptable, replace the old with the new
 
                     //TODO: When implementing alarms running, will need to cancel the original alarm (which should be running)
 
@@ -105,8 +107,8 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     db.addAlarm(withEdits);
                     //Refresh the adapter
                     alarmsList.updateAdapter();
-                    Toast.makeText(rootView.getContext(), "Alarm Updated", Toast.LENGTH_SHORT).show();
-                }
+                    Toast.makeText(rootView.getContext(), "Alarm updated", Toast.LENGTH_SHORT).show();
+                } //If our alarm isn't valid, we've already sent why to the Toast
 
                 dialog.dismiss(); //Now we exit the dialog
             }

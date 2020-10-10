@@ -87,6 +87,7 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
 
     //Checks if this alarm and another are exactly the same so that we can check for duplicates elsewhere.
     public boolean isIdenticalTo(Object o){
+        if(o == null) return false;
         if(!(o instanceof AlarmInfo)) return false;
         AlarmInfo other = (AlarmInfo) o;
         return other.getAlarmName().equals(alarmName) && other.getAlarmTime().equals(alarmTime)
@@ -96,6 +97,7 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
     //Reserved for future use if necessary
     //Would compare to see if two alarms had the same name (not exactly identical, implying one is an edited version of another)
     public boolean isSameAlarmNameAs(AlarmInfo alarm){
+        if(alarm == null) return false;
         return alarm.getAlarmName().equals(this.alarmName);
     }
 }

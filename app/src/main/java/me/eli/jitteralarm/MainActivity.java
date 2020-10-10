@@ -99,10 +99,10 @@ public class MainActivity extends AppCompatActivity {
         boolean[] toggles = getSwitchData(); //{sundaySwitch.isChecked(), ...., saturdaySwitch.isChecked()}
         String[] blanks = getFormData(); //{alarmName, alarmTime, alarmOffset}
         AlarmInfo newAlarm = new AlarmInfo(blanks[0], blanks[1], blanks[2], toggles);
+        boolean valid = currentAlarmsFrag.validateAlarm(newAlarm, true);
 
-        //If the alarm is NOT already in the DB, add it and refresh the adapter, then clear the form
-        if(!db.alarmExistsInDB(newAlarm.getAlarmName())){
-            db.addAlarm(newAlarm);
+        //Created successfully
+        if(valid){
 
             /*
 
@@ -110,14 +110,12 @@ public class MainActivity extends AppCompatActivity {
 
              */
 
+            db.addAlarm(newAlarm);
             Toast.makeText(getApplicationContext(), "Successfully Added!", Toast.LENGTH_SHORT).show();
             currentAlarmsFrag.updateAdapter();
             clearData(v);
-        } else {
-            //Otherwise, the word IS already in the db
-            //Send a message to the user to let them know that already exists
-            Toast.makeText(getApplicationContext(), "That Alarm Name Already Exists!", Toast.LENGTH_LONG).show();
         }
+        //If the alarm was invalid for some reason, we already sent out our explanation and are finished
     }
 
     //Returns boolean values of the switch for each day
