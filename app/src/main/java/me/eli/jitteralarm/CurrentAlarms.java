@@ -35,12 +35,14 @@ public class CurrentAlarms extends Fragment {
     private AlarmsAdapter adapter;
     private DatabaseHelper db;
     private FragmentManager supportFragManager;
+    private MainActivity mainActivity;
     private Context context;
 
     //Store the DB helper created in the activity and the SupportFragmentManager also retrieved from the activity
-    public CurrentAlarms(DatabaseHelper db, FragmentManager supportFragManager){
+    public CurrentAlarms(DatabaseHelper db, FragmentManager supportFragManager, MainActivity mainActivity){
         this.db = db;
         this.supportFragManager = supportFragManager;
+        this.mainActivity = mainActivity;
     }
 
     @Override
@@ -141,9 +143,12 @@ public class CurrentAlarms extends Fragment {
             }
         }
 
-        //Will either be >2 or will be 0 (no days added, which should be filtered out eventually. TODO)
+        //Will either be >2 (some amount of days with trailing comma and space) or will be 0 (if dormant alarm with no days set, empty string)
         if(stringBuilder.length() > 2)
             stringBuilder.setLength(stringBuilder.length() - 2);
+        else //If dormant alarm, add that info instead
+                stringBuilder.append("This alarm is currently not running on any days.");
+
         //Last one
         ((TextView)dialogRootView.findViewById(R.id.confirmTriggers)).setText(stringBuilder.toString());
 
@@ -176,10 +181,10 @@ public class CurrentAlarms extends Fragment {
     //If something is amiss, return false and print to the user what's wrong.
     //submittingNew is true if alarm is being created for the first time
         //submittingNew is false if the user is editing an alarm and we want to validate their new details
-    public boolean validateAlarm(AlarmInfo alarmToCheck, boolean submittingNew){
-        String alarmName = alarmToCheck.getAlarmName().trim();
-        String alarmTime = alarmToCheck.getAlarmTime().trim();
-        String alarmOffset = alarmToCheck.getOffsetTime().trim();
+    public boolean validateAlarm(String alarmName, String alarmTime, String alarmOffset, boolean submittingNew){
+        alarmName = alarmName.trim();
+        alarmTime = alarmTime.trim();
+        alarmOffset = alarmOffset.trim();
 
         //Checks alarmName against existing db alarms
         //If we're submitting for the first time, we want to check for existing alarms of same name
@@ -245,8 +250,14 @@ public class CurrentAlarms extends Fragment {
         }
 
         //We're not going to validate the trigger array. If they want to leave every day off, it effectively disables the alarm, which is fine with us.
+        //Also not validating nextTriggerDate since that can only be valid if the rest of the info is valid
 
         //Return our valid alarm
         return true;
+    }
+
+    //Used by AlarmDetailsDialogFragment to set the updated version of an alarm
+    public void startAlarm(AlarmInfo editedAlarm){
+        mainActivity.startAlarm(editedAlarm);
     }
 }

@@ -3,7 +3,13 @@ package me.eli.jitteralarm;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -11,6 +17,7 @@ import android.widget.Toast;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.tabs.TabLayout;
 
+import me.eli.jitteralarm.receivers.AlarmReceiver;
 import me.eli.jitteralarm.utilities.AlarmInfo;
 import me.eli.jitteralarm.utilities.DatabaseHelper;
 import me.eli.jitteralarm.utilities.FragPageAdapter;
@@ -54,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Set up page adapter to hold and navigate between fragments
         final FragPageAdapter fragPageAdapter = new FragPageAdapter(getSupportFragmentManager());
-        fragPageAdapter.addFragment(new CurrentAlarms(db, getSupportFragmentManager()));
+        fragPageAdapter.addFragment(new CurrentAlarms(db, getSupportFragmentManager(), this));
         fragPageAdapter.addFragment(new NewAlarm());
         viewPager.setAdapter(fragPageAdapter);
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
@@ -83,9 +90,6 @@ public class MainActivity extends AppCompatActivity {
     //If the alarm doesn't already exist, we create a new AlarmInfo object and submit that to the database.
     //Finish by clearing all the data in the fields.
     public void createAlarm(View v){
-
-        //TODO: CHECK FOR VALID INPUTS, CONVERT TIME CHECKS TO TIME PICKERS?
-
         //If we haven't already gotten a reference to the switches, do it here
         //They're guaranteed to be available now
         //The only reason I have this here (I know it looks hacky) was because
@@ -98,24 +102,75 @@ public class MainActivity extends AppCompatActivity {
         //Create a new alarm from the information on the form
         boolean[] toggles = getSwitchData(); //{sundaySwitch.isChecked(), ...., saturdaySwitch.isChecked()}
         String[] blanks = getFormData(); //{alarmName, alarmTime, alarmOffset}
-        AlarmInfo newAlarm = new AlarmInfo(blanks[0], blanks[1], blanks[2], toggles);
-        boolean valid = currentAlarmsFrag.validateAlarm(newAlarm, true);
+        boolean valid = currentAlarmsFrag.validateAlarm(blanks[0], blanks[1], blanks[2], true);
 
         //Created successfully
         if(valid){
+            //Setup alarm and start it running
+            AlarmInfo newAlarm = new AlarmInfo(blanks[0], blanks[1], blanks[2], toggles);
+            startAlarm(newAlarm);
 
-            /*
-
-            TODO: Start the alarm before adding it to the database
-
-             */
-
+            //Now we can add the alarm to the db and clear the form
             db.addAlarm(newAlarm);
             Toast.makeText(getApplicationContext(), "Successfully Added!", Toast.LENGTH_SHORT).show();
             currentAlarmsFrag.updateAdapter();
             clearData(v);
         }
         //If the alarm was invalid for some reason, we already sent out our explanation and are finished
+    }
+
+    //Starts running a provided alarm, as long as it isn't set as dormant (not suppose to run, no days specified)
+    public void startAlarm(AlarmInfo alarmToStart){
+
+        //Creates new offset alarm structure
+        Intent alarmIntent = new Intent(this, AlarmReceiver.class);
+        alarmIntent.putExtra("name", alarmToStart.getAlarmName()); //All the identifying information we need. Receiver can look up alarm to reset it.
+        int requestCode = alarmNameHash(alarmToStart.getAlarmName());
+        alarmIntent.putExtra("requestCode", requestCode); //All the identifying information we need. Receiver can look up alarm to reset it.
+        //This request code is guaranteed to be unique for each alarm, no alarms will override each other
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), requestCode, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmToStart.getCalendarFromNextTriggerDate().getTimeInMillis(), pendingIntent); //Set alarm to run at exact time of next trigger date
+
+        //Log successfully set alarms for testing purposes
+        Log.d("test", "Started alarm '" + alarmToStart.toString() + "' with request code '" + requestCode + "' that will next trigger at " + alarmToStart.getNextTriggerDate());
+
+    }
+
+    //Computes a request code (hash) unique to this alarm name
+    private int alarmNameHash(String alarmName){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if(sp.contains(alarmName)) //If we've already defined a request code for this alarm name, use that
+            return sp.getInt(alarmName, -1);
+
+        //Otherwise, we need to generate a new request code
+        SharedPreferences.Editor editor = sp.edit();
+
+        //Generate hash value
+        int hash = 0;
+        for(char c : alarmName.toCharArray()){
+            int add = (int) Math.pow((int)c, 2);
+            hash += add;
+            if(hash < 0)
+                hash = hash - Integer.MIN_VALUE; //If we overflow, return to positive numbers by setting to difference with int min value
+        }
+
+        int power = 0;
+        //While this has value is already used, keep adding using quadratic probing until we reach a unique hash
+        while(sp.getBoolean(String.valueOf(hash), false)){
+            hash += (int) Math.pow(2, power++);
+            if(hash < 0)
+                hash = hash - Integer.MIN_VALUE; //If we overflow, return to positive numbers by setting to difference with int min value
+        }
+
+        //Mark this hash as used
+        editor.putBoolean(String.valueOf(hash), true);
+        editor.putInt(alarmName, hash);
+        editor.apply();
+
+        //Return the hash for this alarm name
+        return hash;
     }
 
     //Returns boolean values of the switch for each day

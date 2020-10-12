@@ -1,13 +1,24 @@
 package me.eli.jitteralarm.utilities;
 
+
 import androidx.annotation.NonNull;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+
 public class AlarmInfo implements Comparable<AlarmInfo> {
+
+    private final String DATE_PATTERN = "E yyyy.MM.dd 'at' hh:mm:ss a zzz";
+    private final SimpleDateFormat formatForPattern = new SimpleDateFormat(DATE_PATTERN, Locale.US);
 
     //Stores the important information about an alarm
     private String alarmName; //Name of the alarm
     private String alarmTime; //Time the alarm triggers - HH:MM AM/PM
     private String offsetTime; //In what offset the alarm is allowed to trigger - HH:MM:SS
+    private String nextTriggerDate;
     private boolean[] triggerDays; //What days the alarm will trigger. Index 0 = Sunday, 6 = Saturday
 
     //Set up our AlarmInfo object with initial data and trigger days in boolean array form
@@ -16,6 +27,8 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         this.alarmTime = alarmTime;
         this.offsetTime = offsetTime;
         this.triggerDays = triggerOnDay;
+        setNextTriggerDate(generateTriggerDate()); //Generates a random, valid date for our first alarm to be set
+        //Can be manually reset later on when resetting alarms
     }
 
     //Alternative constructor that can be used to pass in a string representation of trigger days
@@ -23,6 +36,17 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         this.alarmName = alarmName;
         this.alarmTime = alarmTime;
         this.offsetTime = offsetTime;
+        setTriggerArray(triggerDays);
+        setNextTriggerDate(generateTriggerDate()); //Generates a random, valid date for our first alarm to be set
+        //Can be manually reset later on when resetting alarms
+    }
+
+    //Alternative constructor that creates alarm from database row (all fields stored as strings)
+    public AlarmInfo(String alarmName, String alarmTime, String offsetTime, String nextTriggerDate, String triggerDays){
+        this.alarmName = alarmName;
+        this.alarmTime = alarmTime;
+        this.offsetTime = offsetTime;
+        this.nextTriggerDate = nextTriggerDate;
         setTriggerArray(triggerDays);
     }
 
@@ -38,6 +62,20 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
 
     public String getOffsetTime() {
         return offsetTime;
+    }
+
+    public String getNextTriggerDate(){
+        return nextTriggerDate;
+    }
+
+    //Returns true if there any days in our triggerDays array set to true
+    //Returns false if the alarm is set to never run
+    public boolean areAnyTriggerDays(){
+        boolean result = false;
+        for(int i = 0; i < 7; i++){
+            result = result || triggerDays[i];
+        }
+        return result;
     }
 
     //Retrieve trigger days in boolean array form
@@ -90,6 +128,7 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         if(o == null) return false;
         if(!(o instanceof AlarmInfo)) return false;
         AlarmInfo other = (AlarmInfo) o;
+        //Only care to check for alarm details, we don't care if the next trigger date is different
         return other.getAlarmName().equals(alarmName) && other.getAlarmTime().equals(alarmTime)
                 && other.getOffsetTime().equals(offsetTime) && other.getTriggerString().equals(this.getTriggerString());
     }
@@ -100,4 +139,121 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         if(alarm == null) return false;
         return alarm.getAlarmName().equals(this.alarmName);
     }
+
+    //Uses the time, offset, and trigger dates to generate a new trigger time within the parameters
+    //Return this trigger time in Gregorian Calendar form
+    public GregorianCalendar generateTriggerDate(){
+        //If we don't have any days set to trigger this alarm, the alarm is dormant and we make everything null to signify this
+        if(!areAnyTriggerDays())
+            return null;
+
+        GregorianCalendar cal = new GregorianCalendar();
+        String[] timeParts = alarmTime.split("[: ]");
+        String[] offsetParts = offsetTime.split(":");
+
+        //Sets the date for the next day.
+        cal.set(GregorianCalendar.HOUR, Integer.parseInt(timeParts[0]));
+        cal.set(GregorianCalendar.MINUTE, Integer.parseInt(timeParts[1]));
+        cal.set(GregorianCalendar.SECOND, 0);
+        cal.set(GregorianCalendar.AM_PM, timeParts[2].equalsIgnoreCase("AM") ? GregorianCalendar.AM : GregorianCalendar.PM);
+
+        //GregorianCalendar.DAY_OF_WEEK uses constants SUNDAY = 1, ..., SATURDAY = 7
+        //cal.get(GregorianCalendar.DAY_OF_WEEK) - 1 is how we get proper index for triggerArray
+        //While the current day of the week isn't right to trigger this alarm, scoot it to the next day
+        //When we do hit a valid day of the week, triggerDays is true so we stop
+        while(!triggerDays[cal.get(GregorianCalendar.DAY_OF_WEEK) - 1]){
+            cal.add(GregorianCalendar.DAY_OF_YEAR, 1);
+        }
+
+        //Setup for adding an offset: get maximum amount of time we can add to the alarm and still be in our boundaries
+        int maxOffsetHours = Integer.parseInt(offsetParts[0]);
+        int maxOffsetMinutes = Integer.parseInt(offsetParts[1]);
+        int maxOffsetSeconds = Integer.parseInt(offsetParts[2]);
+
+        //Generates a number between -maxOffsetHours and maxOffsetHours to use as hour offset for alarm
+        //Minutes and seconds work the exact same way
+        cal.add(GregorianCalendar.HOUR, (int)(Math.random() * (2 * maxOffsetHours + 1)) - maxOffsetHours);
+        cal.add(GregorianCalendar.MINUTE, (int)(Math.random() * (2 * maxOffsetMinutes + 1)) - maxOffsetMinutes);
+        cal.add(GregorianCalendar.SECOND, (int)(Math.random() * (2 * maxOffsetSeconds + 1)) - maxOffsetSeconds);
+        return cal;
+    }
+
+    //Set next trigger date by passing in randomly generated calendar time
+    public void setNextTriggerDate(GregorianCalendar nextTriggerDate){
+        if(nextTriggerDate == null)
+            //If calendar is null, this alarm isn't set to run, so we can set our string to null as a signifier
+            this.nextTriggerDate = null;
+        else
+            //Using constant simpleDateFormat, generate string representation of calendar date, set as nextTriggerDate
+            this.nextTriggerDate = formatForPattern.format(nextTriggerDate.getTime());
+    }
+
+    //Set next trigger date by passing in string representation (pulled from database)
+    public void setNextTriggerDate(String nextTriggerDate){
+        this.nextTriggerDate = nextTriggerDate;
+    }
+
+    //Returns GregorianCalendar form of next trigger date so that we can reset it after boot-ups if needed
+    public GregorianCalendar getCalendarFromNextTriggerDate(){
+        //If nextTriggerDate is null, alarm is not set to run, so we just quit while we're ahead
+        if(nextTriggerDate == null)
+            return null;
+
+        try {
+            Date alarmDate = formatForPattern.parse(nextTriggerDate);
+            GregorianCalendar cal = (GregorianCalendar) GregorianCalendar.getInstance();
+            assert alarmDate != null;
+            cal.setTime(alarmDate);
+            return cal;
+        } catch(ParseException pe){
+            pe.printStackTrace();
+        }
+        //Return null if this doesn't work. As long as we keep formatting consistent, should be no problems with any exceptions/nulls
+        return null;
+    }
+
+    //TODO: START TO IMPLEMENT THIS SHIT
+
+    /*
+
+    Calendar -> String -> Calendar code for reference
+
+    GregorianCalendar calendar = new GregorianCalendar();
+    // Creating an object of SimpleDateFormat
+    SimpleDateFormat formattedDate
+            = new SimpleDateFormat(PATTERN, Locale.US);
+
+    // Use format() method to change the format
+    // Using getTime() method,
+    // this required date is passed
+    // to format() method
+    String dateFormatted = formattedDate.format(calendar.getTime());
+
+    // Displaying grogorian date ia SimpleDateFormat
+    System.out.println(dateFormatted);
+
+    SimpleDateFormat fmt = new SimpleDateFormat(PATTERN);
+    Date date = null;
+    try {
+        date = fmt.parse(dateFormatted);
+        GregorianCalendar cal = (GregorianCalendar) GregorianCalendar.getInstance();
+        cal.setTime(date);
+
+        formattedDate
+                = new SimpleDateFormat(PATTERN, Locale.US);
+
+        // Use format() method to change the format
+        // Using getTime() method,
+        // this required date is passed
+        // to format() method
+        dateFormatted = formattedDate.format(calendar.getTime());
+
+        // Displaying grogorian date ia SimpleDateFormat
+        System.out.println(dateFormatted);
+    } catch (ParseException e) {
+        e.printStackTrace();
+    }
+
+     */
+
 }

@@ -11,13 +11,14 @@ import java.util.Collections;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     //Store constants holding info about this database
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
     private static final String DATABASE_NAME = "alarms.db";
     private static final String TABLE_NAME = "Alarms_Table";
     private static final String ALARM_NAME = "Alarm_Name";
     private static final String ALARM_TIME = "Alarm_Time";
     private static final String ALARM_OFFSET = "Alarm_Offset";
     private static final String TRIGGER_DAYS = "Trigger_Days";
+    private static final String NEXT_TRIGGER_DATE = "Next_Trigger_Date";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -30,7 +31,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ALARM_NAME + " TEXT, "
                 + ALARM_TIME + " TEXT, "
                 + ALARM_OFFSET + " TEXT, "
-                + TRIGGER_DAYS + " Text"
+                + NEXT_TRIGGER_DATE + " TEXT, "
+                + TRIGGER_DAYS + " TEXT"
                 + ");";
         db.execSQL(query);
     }
@@ -50,6 +52,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(ALARM_NAME, alarm.getAlarmName());
         values.put(ALARM_TIME, alarm.getAlarmTime());
         values.put(ALARM_OFFSET, alarm.getOffsetTime());
+        values.put(NEXT_TRIGGER_DATE, alarm.getNextTriggerDate());
         values.put(TRIGGER_DAYS, alarm.getTriggerString());
 
         //Insert this object into the database
@@ -58,7 +61,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    //For later use if needed. Not currently used in this application.
     //Searches database for the alarm with the given name, returning it if found or null otherwise.
     public AlarmInfo getAlarmInfo(String alarmName){
         SQLiteDatabase db = getReadableDatabase();
@@ -72,9 +74,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             String retrievedName = cursor.getString(cursor.getColumnIndex(ALARM_NAME));
             String retrievedTime = cursor.getString(cursor.getColumnIndex(ALARM_TIME));
             String retrievedOffset = cursor.getString(cursor.getColumnIndex(ALARM_OFFSET));
+            String retrievedNextTriggerDate = cursor.getString(cursor.getColumnIndex(NEXT_TRIGGER_DATE));
             String retrievedTriggerDays = cursor.getString(cursor.getColumnIndex(TRIGGER_DAYS));
 
-            retrievedAlarm = new AlarmInfo(retrievedName, retrievedTime, retrievedOffset, retrievedTriggerDays);
+            //Create alarm from this information
+            retrievedAlarm = new AlarmInfo(retrievedName, retrievedTime, retrievedOffset, retrievedNextTriggerDate, retrievedTriggerDays);
         }
 
         //Return the information about this alarm, or null if we didn't find any matches
@@ -113,9 +117,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             String retrievedName = cursor.getString(cursor.getColumnIndex(ALARM_NAME));
             String retrievedTime = cursor.getString(cursor.getColumnIndex(ALARM_TIME));
             String retrievedOffset = cursor.getString(cursor.getColumnIndex(ALARM_OFFSET));
+            String retrievedNextTriggerDate = cursor.getString(cursor.getColumnIndex(NEXT_TRIGGER_DATE));
             String retrievedTriggerDays = cursor.getString(cursor.getColumnIndex(TRIGGER_DAYS));
 
-            AlarmInfo found = new AlarmInfo(retrievedName, retrievedTime, retrievedOffset, retrievedTriggerDays);
+            AlarmInfo found = new AlarmInfo(retrievedName, retrievedTime, retrievedOffset, retrievedNextTriggerDate, retrievedTriggerDays);
             retrievedAlarms.add(found);
         }
 

@@ -74,8 +74,6 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
         .setPositiveButton(R.string.updateAlarm, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
-                //TODO: Still need to check for alarm validity
-
                 //Take all data for this alarm, changed or not, and compile it into an AlarmInfo object
                 boolean[] newTriggers = {dfSundaySwitch.isChecked(),
                                         dfMondaySwitch.isChecked(),
@@ -84,8 +82,15 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                                         dfThursdaySwitch.isChecked(),
                                         dfFridaySwitch.isChecked(),
                                         dfSaturdaySwitch.isChecked()};
+                //If the changed data doesn't make a valid alarm, Toast prints automatically telling the issue, we don't do anything else (leave dialog up)
+                if(!alarmsList.validateAlarm(dfNameInput.getText().toString(),
+                        dfTimeInput.getText().toString(),
+                        dfOffsetInput.getText().toString(), false)){
+                    //WAY LATER TODO: Make a validate method that will allow us to highlight the invalid field.
+                    return;
+                }
 
-                //Either builds alarm successfully or tells the user what they did wrong and returns null
+                //Otherwise, we can go ahead and set up our new alarm safely
                 AlarmInfo withEdits = new AlarmInfo(dfNameInput.getText().toString(),
                                                     dfTimeInput.getText().toString(),
                                                     dfOffsetInput.getText().toString(),
@@ -96,13 +101,13 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     //No changes made, don't submit to db
                     dialog.dismiss();
                     Toast.makeText(getContext(), "No changes were made!", Toast.LENGTH_SHORT).show();
-                } else if(alarmsList.validateAlarm(withEdits, false)){ //Otherwise, if the new details are acceptable, replace the old with the new
+                } else { //Otherwise, replace the old with the new
 
                     //TODO: When implementing alarms running, will need to cancel the original alarm (which should be running)
 
+
                     //Take out originalState from db
                     alarmsList.deleteAlarm(originalState);
-
                     //Add new form to the database
                     db.addAlarm(withEdits);
                     //Refresh the adapter

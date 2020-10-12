@@ -13,105 +13,59 @@ import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
+import java.util.GregorianCalendar;
+import java.util.Objects;
 import java.util.Random;
 
 import me.eli.jitteralarm.R;
 import me.eli.jitteralarm.MainActivity;
+import me.eli.jitteralarm.utilities.AlarmInfo;
+import me.eli.jitteralarm.utilities.DatabaseHelper;
 
 /**
  * Created by Eli on 1/7/2016.
  */
 public class BootUpReceiver extends BroadcastReceiver {
 
+    private Context context;
+    private DatabaseHelper helper;
+    private SharedPreferences sp;
+
     @Override
     public void onReceive(Context context, Intent intent) {
+        this.context = context;
 
-        if(intent.getAction() != null && !intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED))
+        //Only continue for boot up intents
+        if(!Objects.equals(intent.getAction(), Intent.ACTION_BOOT_COMPLETED))
             return;
 
-        //NOTE THAT IT WORKS, JUST NEED TO DO THE RIGHT THINGS WITH THE DATA
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        if(sp.getBoolean("alarmRunning", false)) {
-            String name = sp.getString("currentName", "");
-            String description = sp.getString("currentDescription", "");
-            long exactTriggerTime = sp.getLong("exactTriggerTime", 0);
-            long offsetTriggerTime = sp.getLong("offsetTriggerTime", 0);
-            boolean runOnce = sp.getBoolean("runOnce", true);
-            long interval = sp.getLong("interval", 0);
-            long currentRandomOffset = sp.getLong("currentRandomOffset", 0);
-
-            if(System.currentTimeMillis() >= offsetTriggerTime){
-                //Send notification and do nothing else.
-                playNotification(context, name, description);
-            }
-
-            if(runOnce){
-                if(System.currentTimeMillis() >= exactTriggerTime){
-                    //send an intent to call the broadcast receiver in the MainActivity class so that the alarm will reset automatically.
-                    //If needed, set a new alarm here that will run off that one when it triggers (put it back of track).
-
-                    //Create a new alarm with the remaining time left, if multiple triggers have passed then do the math and start at the appropriate time.
-                    //Need to open the MainActivity with an intent with the boolean extra FROM_BOOTUP when th alarm is done.
-
-                    long exactTimeAtNextTrigger = exactTriggerTime;
-                    while(exactTimeAtNextTrigger < System.currentTimeMillis()){
-                        exactTimeAtNextTrigger += interval;
-                    }
-                    long offsetTimeAtNextTrigger = exactTimeAtNextTrigger + currentRandomOffset;
-
-                    Intent i = new Intent(context, StartMainReceiver.class);
-
-                    //Creates offset alarm structure
-                    Intent i2 = new Intent(context, AlarmReceiver.class);
-                    intent.putExtra("name", name);
-                    intent.putExtra("description", description);
-
-                    PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 234324243, i2, PendingIntent.FLAG_UPDATE_CURRENT);
-
-                    //Creates new recursion alarm structure
-                    PendingIntent pendingIntent2 = PendingIntent.getBroadcast(context, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
-
-                    AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-                    manager.setExact(AlarmManager.RTC_WAKEUP, exactTimeAtNextTrigger, pendingIntent2);
-                    manager.setExact(AlarmManager.RTC_WAKEUP, offsetTimeAtNextTrigger, pendingIntent);
-                }
+        sp = PreferenceManager.getDefaultSharedPreferences(context);
+        helper = new DatabaseHelper(context);
+        for(AlarmInfo alarm : helper.getAllAlarms()){
+            //Alarm already should have gone off, play missed alarm notification then reset alarm
+            if(System.currentTimeMillis() <= alarm.getCalendarFromNextTriggerDate().getTimeInMillis()){
+                playExpiredAlarmNotification(alarm);
+                restartAlarm(alarm, true);
+            } else {
+                restartAlarm(alarm, false);
             }
         }
     }
 
-    private void playNotification(Context context, String name, String description){
-        long[] vibrate = {250, 350, 250, 350, 750, 750};
-        SoundPool pool = getSoundPool();
-        Random r = new Random();
-        int randomNumber = 0;
-        while(randomNumber == 0){
-            randomNumber = r.nextInt(122);
-        }
-        final int rawResourceID = context.getResources().getIdentifier("a" + randomNumber, "raw", context.getPackageName());
-        pool.load(context, rawResourceID, 0);
-        Uri randomSound = Uri.parse("android.resource://" + context.getPackageName() + "/" + rawResourceID);
-        String CHANNEL_ID = "JITTERALARM1";
+    private void playExpiredAlarmNotification(AlarmInfo alarm){
+        String CHANNEL_ID = "JITTERALARM_MISSED_ALARM";
 
-        String channelName = "JitterAlarm Notification Channel";
-        String channelDescription = "Notification channel for JitterAlarm";
+        String channelName = "Notification Channel for Missed Alarms";
         int importance = NotificationManager.IMPORTANCE_DEFAULT;
 
-        AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                .build();
-
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID + randomNumber, channelName, importance);
-        channel.setSound(randomSound, audioAttributes);
-        channel.setDescription(channelDescription);
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, channelName, importance);
         channel.shouldVibrate();
-        channel.setVibrationPattern(vibrate);
 
-        // Register the channel with the system; you can't change the importance
-        // or other notification behaviors after this
+        // Register the channel with the system
         NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
         if(notificationManager != null)
             notificationManager.createNotificationChannel(channel);
@@ -120,25 +74,38 @@ public class BootUpReceiver extends BroadcastReceiver {
         startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent startMainPI = PendingIntent.getActivity(context, 0, startMain, 0);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID + randomNumber)
-                .setContentText(description)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle("You missed your \"" + alarm.getAlarmName() + "\" alarm!")
+                .setContentText("This alarm was suppose to trigger at " + alarm.getNextTriggerDate())
                 .setSmallIcon(R.drawable.ic_alarm)
                 .setLights(Color.GREEN, 500, 2000)
                 .setAutoCancel(true)
-                .setContentTitle(name)
                 .setContentIntent(startMainPI)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
         if(notificationManager != null)
             notificationManager.notify(1, builder.build());
     }
 
-    private SoundPool getSoundPool() {
-        AudioAttributes attributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
-                .build();
-        return new SoundPool.Builder()
-                .setAudioAttributes(attributes)
-                .build();
+    //Set alarm to either current nextTriggerTime if not already passed, or a newly generated nextTriggerTime if the time HAS already passed
+    //Expired is true if the time this alarm was suppose to run already passed on a previous day, false otherwise
+    public void restartAlarm(AlarmInfo alarmToSet, boolean expired){
+        if(expired){ //If the time for this alarm has already passed (notification sent already), generate next trigger date and set it
+            GregorianCalendar nextDate = alarmToSet.generateTriggerDate();
+            alarmToSet.setNextTriggerDate(nextDate);
+        }
+
+        //Schedule this alarm to trigger AlarmReceiver with correct name/requestCode information
+        Intent alarmIntent = new Intent(context, AlarmReceiver.class);
+        alarmIntent.putExtra("name", alarmToSet.getAlarmName());
+        int requestCode = sp.getInt(alarmToSet.getAlarmName(), -1);
+        alarmIntent.putExtra("requestCode", requestCode);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmToSet.getCalendarFromNextTriggerDate().getTimeInMillis(), pendingIntent); //Set alarm to run at exact time of next trigger date
+
+        //Log successfully set alarms for testing purposes
+        Log.d("test", "Restarted alarm " + alarmToSet.toString() + ", will next trigger at " + alarmToSet.getNextTriggerDate());
+
     }
 }
