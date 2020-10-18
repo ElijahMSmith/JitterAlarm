@@ -5,13 +5,14 @@ import androidx.annotation.NonNull;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
 public class AlarmInfo implements Comparable<AlarmInfo> {
 
-    private final String DATE_PATTERN = "E yyyy.MM.dd 'at' hh:mm:ss a zzz";
+    private final String DATE_PATTERN = "E yyyy.MM.dd', 'hh:mm:ss a zzz";
     private final SimpleDateFormat formatForPattern = new SimpleDateFormat(DATE_PATTERN, Locale.US);
 
     //Stores the important information about an alarm
@@ -27,7 +28,7 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         this.alarmTime = alarmTime;
         this.offsetTime = offsetTime;
         this.triggerDays = triggerOnDay;
-        setNextTriggerDate(generateTriggerDate()); //Generates a random, valid date for our first alarm to be set
+        setNextTriggerDate(generateTriggerDate(false)); //Generates a random, valid date for our first alarm to be set
         //Can be manually reset later on when resetting alarms
     }
 
@@ -37,7 +38,7 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         this.alarmTime = alarmTime;
         this.offsetTime = offsetTime;
         setTriggerArray(triggerDays);
-        setNextTriggerDate(generateTriggerDate()); //Generates a random, valid date for our first alarm to be set
+        setNextTriggerDate(generateTriggerDate(false)); //Generates a random, valid date for our first alarm to be set
         //Can be manually reset later on when resetting alarms
     }
 
@@ -142,7 +143,10 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
 
     //Uses the time, offset, and trigger dates to generate a new trigger time within the parameters
     //Return this trigger time in Gregorian Calendar form
-    public GregorianCalendar generateTriggerDate(){
+    public GregorianCalendar generateTriggerDate(boolean alreadyTriggeredToday){
+
+        //TODO: UPDATE INTERVAL GENERATION TO MATCH HELPER METHOD'S VERSION. CURRENTLY, IF INTERVAL ONLY PROVIDES H/M/S, it only picks random H/M/S and not ANY combination still in that interval
+
         //If we don't have any days set to trigger this alarm, the alarm is dormant and we make everything null to signify this
         if(!areAnyTriggerDays())
             return null;
@@ -151,7 +155,16 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         String[] timeParts = alarmTime.split("[: ]");
         String[] offsetParts = offsetTime.split(":");
 
-        //Sets the date for the next day.
+        //Check if today is a trigger day for this alarm (and it hasn't already triggered once today)
+        if(!alreadyTriggeredToday && triggerDays[cal.get(GregorianCalendar.DAY_OF_WEEK) - 1]){
+            //If this alarm has any time left to trigger today, we'll generate a random moment in that remaining time.
+            //If the whole interval has already passed today, returns null and we move on to the rest of the method (starts looking for future days)
+            GregorianCalendar nextTrigger = generateTriggerForToday();
+            if(nextTrigger != null) return nextTrigger;
+        }
+
+        //Set base time for trigger and start looking to days tomorrow (since it doesn't have to trigger today)
+        cal.add(GregorianCalendar.DAY_OF_YEAR, 1);
         cal.set(GregorianCalendar.HOUR, Integer.parseInt(timeParts[0]));
         cal.set(GregorianCalendar.MINUTE, Integer.parseInt(timeParts[1]));
         cal.set(GregorianCalendar.SECOND, 0);
@@ -175,6 +188,55 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         cal.add(GregorianCalendar.HOUR, (int)(Math.random() * (2 * maxOffsetHours + 1)) - maxOffsetHours);
         cal.add(GregorianCalendar.MINUTE, (int)(Math.random() * (2 * maxOffsetMinutes + 1)) - maxOffsetMinutes);
         cal.add(GregorianCalendar.SECOND, (int)(Math.random() * (2 * maxOffsetSeconds + 1)) - maxOffsetSeconds);
+        return cal;
+    }
+
+    //Called if today is a trigger day, generate a time that is in the interval and hasn't already passed, return that for use
+    private GregorianCalendar generateTriggerForToday(){
+        GregorianCalendar cal = new GregorianCalendar();
+        String[] timeParts = alarmTime.split("[: ]");
+        String[] offsetParts = offsetTime.split(":");
+
+        //Set base time for trigger
+        cal.set(GregorianCalendar.HOUR, Integer.parseInt(timeParts[0]));
+        cal.set(GregorianCalendar.MINUTE, Integer.parseInt(timeParts[1]));
+        cal.set(GregorianCalendar.SECOND, 0);
+        cal.set(GregorianCalendar.AM_PM, timeParts[2].equalsIgnoreCase("AM") ? GregorianCalendar.AM : GregorianCalendar.PM);
+
+        //Setup for adding an offset: get maximum amount of time we can add to the alarm and still be in our boundaries
+        int maxOffsetHours = Integer.parseInt(offsetParts[0]);
+        int maxOffsetMinutes = Integer.parseInt(offsetParts[1]);
+        int maxOffsetSeconds = Integer.parseInt(offsetParts[2]);
+
+        //Add maximum offset to cal
+        cal.add(Calendar.HOUR, maxOffsetHours);
+        cal.add(Calendar.MINUTE, maxOffsetMinutes);
+        cal.add(Calendar.SECOND, maxOffsetSeconds);
+
+        //If we've missed the entire interval for today, return null indicating we need to look for future times starting tomorrow
+        if(System.currentTimeMillis() >= cal.getTimeInMillis())
+            return null;
+
+        //Otherwise, generate a random time in what remaining time of the interval we have left
+
+        //First store our upper bound on the interval
+        long intervalTop = cal.getTimeInMillis();
+
+        //Set cal to be the bottom of the interval (base time - max offset)
+        cal.add(Calendar.HOUR, -2 * maxOffsetHours);
+        cal.add(Calendar.MINUTE, -2 * maxOffsetMinutes);
+        cal.add(Calendar.SECOND, -2 * maxOffsetSeconds);
+
+        //Gets the higher of the two times, indicating the minimum time we can set our alarm for
+            //If the current time is earlier than the intervalBottom, then we can use the whole interval
+            //If the current time is later than the intervalBottom, then we have to shorten our interval to just between the current time and the top of the interval (cal)
+        long lowerBound = Math.max(System.currentTimeMillis(), cal.getTimeInMillis());
+
+        //Calculate the amount of milliseconds we have in our new interval, whatever that might be
+        long newInterval = intervalTop - lowerBound;
+
+        //Generate a random time in the new interval and return this time in calendar form
+        cal.setTimeInMillis(lowerBound + (long)(Math.random() * (newInterval + 1)));
         return cal;
     }
 

@@ -1,9 +1,15 @@
 package me.eli.jitteralarm;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -16,7 +22,6 @@ import androidx.fragment.app.DialogFragment;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.Objects;
-
 import me.eli.jitteralarm.utilities.AlarmInfo;
 import me.eli.jitteralarm.utilities.DatabaseHelper;
 
@@ -55,7 +60,7 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
         final EditText dfOffsetInput = rootView.findViewById(R.id.dfOffsetInput);
 
         //Set components with originalState data
-        boolean[] originalTriggers = originalState.getTriggerArray();
+        final boolean[] originalTriggers = originalState.getTriggerArray();
         dfSundaySwitch.setChecked(originalTriggers[0]);
         dfMondaySwitch.setChecked(originalTriggers[1]);
         dfTuesdaySwitch.setChecked(originalTriggers[2]);
@@ -102,17 +107,34 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     dialog.dismiss();
                     Toast.makeText(getContext(), "No changes were made!", Toast.LENGTH_SHORT).show();
                 } else { //Otherwise, replace the old with the new
+                    //For testing purposes
+                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getContext());
 
-                    //TODO: When implementing alarms running, will need to cancel the original alarm (which should be running)
-
-
+                    //Cancels the running alarm matching our old values
+                    alarmsList.cancelAlarm(originalState);
                     //Take out originalState from db
                     alarmsList.deleteAlarm(originalState);
+
+                    //Replaces cancelled alarm with an alarm of new values
+                    alarmsList.startAlarm(withEdits);
                     //Add new form to the database
                     db.addAlarm(withEdits);
                     //Refresh the adapter
                     alarmsList.updateAdapter();
-                    Toast.makeText(rootView.getContext(), "Alarm updated", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(rootView.getContext(), "Alarm updated!", Toast.LENGTH_SHORT).show();
+
+                    //TODO: Lots of weird shit going on here. Need to change adapter to display nextTriggerTime instead of alarmTime so I can get to the bottom of this.
+                    //It seems like everything is being changed just fine, but the logs aren't correct. Is anything actually wrong?
+                    //Make sure to test all the situations of alarm changing/resetting to figure out what's up
+                    //TODO: FOR SOME REASON THE NEXT TWO LOG STATEMENTS PRINT THE SAME, OLD VERSION OF THE ALARM
+                    //Problem appears to be the adapter not having the correct nextTriggerTime stored for the alarms,
+                            // so when they are passed in here to update/cancel, we print the wrong things, but when we look in db, that's all correct and in the end we do things right
+
+                    //For testing purposes
+                    Log.d("test", "-------------------------------------------");
+                    Log.d("test", "Cancelled/removed alarm '" + originalState.getAlarmName() + "' with request code '" + sp.getInt(originalState.getAlarmName(), -1) + "', set to trigger at " + originalState.getNextTriggerDate());
+                    Log.d("test", "Set/Replaced with alarm '" + withEdits.getAlarmName() + "' with request code '" + sp.getInt(withEdits.getAlarmName(), -1) + "', set to trigger at " + originalState.getNextTriggerDate());
+                    Log.d("test", "-------------------------------------------");
                 } //If our alarm isn't valid, we've already sent why to the Toast
 
                 dialog.dismiss(); //Now we exit the dialog

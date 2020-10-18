@@ -5,6 +5,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -59,6 +61,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = getWritableDatabase();
         db.insert(TABLE_NAME, null, values);
         db.close();
+
+        Log.d("test", "Added alarm '" + alarm.toString() + "' to db, printing contents...");
+        printAlarmList();
     }
 
     //Searches database for the alarm with the given name, returning it if found or null otherwise.
@@ -90,6 +95,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void deleteAlarm(AlarmInfo alarm){
         SQLiteDatabase db = getReadableDatabase();
         db.execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + ALARM_NAME + " = '" + alarm.getAlarmName() + "'");
+        db.close();
+
+        Log.d("test", "Deleted alarm '" + alarm.toString() + "' that was set to next trigger at " + alarm.getNextTriggerDate() + ", printing contents...");
+        printAlarmList();
     }
 
     //Searches database to check if alarm with the given name exists already, returning true if so, false otherwise.
@@ -130,6 +139,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Collections.sort(retrievedAlarms);
         //Return our sorted collection
         return retrievedAlarms;
+    }
+
+    //Updates the nextTriggerTime of alarm if it is found in the database and returns true
+    //If we don't find alarm, returns false and makes no changes
+    public boolean updateNextTriggerDate(AlarmInfo alarm){
+        //If the alarm isn't the in the database for some reason, return failure
+        if(!alarmExistsInDB(alarm.getAlarmName()))
+            return false;
+
+        //Update
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("UPDATE " + TABLE_NAME + " SET " + NEXT_TRIGGER_DATE + "='" + alarm.getNextTriggerDate() + "' WHERE " + ALARM_NAME + "='" + alarm.getAlarmName() + "'");
+        db.close();
+
+        Log.d("test", "Updated alarm '" + alarm.toString() + "' to new trigger date of " + alarm.getNextTriggerDate() + ", printing db contents...");
+        printAlarmList();
+        return true;
+    }
+
+    private void printAlarmList(){
+        ArrayList<AlarmInfo> newAlarmsList = getAllAlarms();
+
+        Log.d("test", "DB LIST ------------------");
+        for(AlarmInfo alarm : newAlarmsList)
+            Log.d("test", "Alarm '" + alarm.toString() + "', next triggers at " + alarm.getNextTriggerDate());
+        Log.d("test", "--------------------------");
     }
 
 }

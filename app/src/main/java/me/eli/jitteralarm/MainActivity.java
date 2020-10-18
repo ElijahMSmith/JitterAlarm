@@ -133,7 +133,9 @@ public class MainActivity extends AppCompatActivity {
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmToStart.getCalendarFromNextTriggerDate().getTimeInMillis(), pendingIntent); //Set alarm to run at exact time of next trigger date
 
         //Log successfully set alarms for testing purposes
+        Log.d("test", "-------------------------------------------");
         Log.d("test", "Started alarm '" + alarmToStart.toString() + "' with request code '" + requestCode + "' that will next trigger at " + alarmToStart.getNextTriggerDate());
+        Log.d("test", "-------------------------------------------");
 
     }
 
@@ -220,4 +222,27 @@ public class MainActivity extends AppCompatActivity {
         editAlarmOffset = findViewById(R.id.editOffset);
     }
 
+    //Called to cancel a running alarm that has been updated with new details
+    public void cancelAlarm(AlarmInfo oldAlarm) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+
+        //Store and remove from sp the originalState alarm's request code
+        int requestCode = sp.getInt(oldAlarm.getAlarmName(), -1);
+        sp.edit().remove(oldAlarm.getAlarmName()).apply();
+
+        //Set up intent and pending intent to match alarm when it was set
+        Intent cancelAlarm = new Intent(this, AlarmReceiver.class);
+        cancelAlarm.putExtra("name", oldAlarm.getAlarmName());
+        cancelAlarm.putExtra("requestCode", requestCode);
+
+        //Cancel it
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, requestCode, cancelAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmManager.cancel(pendingIntent);
+
+        //For testing purposes
+        Log.d("test", "-------------------------------------------");
+        Log.d("test", "Canceled alarm '" + oldAlarm.getAlarmName() + "' with request code '" + requestCode + "' that was set to trigger at " + oldAlarm.getNextTriggerDate());
+        Log.d("test", "-------------------------------------------");
+    }
 }

@@ -119,14 +119,18 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         //If we don't find the alarm, let me know (only helpful for testing) then breaks out of method
         if(triggeredAlarm == null){
+            Log.d("test", "-------------------------------------------");
             Log.d("test", "Couldn't reset alarm " + name + " because it was not found in the database!");
+            Log.d("test", "-------------------------------------------");
             return;
         }
 
-        GregorianCalendar nextDate = triggeredAlarm.generateTriggerDate();
+        //Generate our next alarm
+        GregorianCalendar nextDate = triggeredAlarm.generateTriggerDate(true);
         triggeredAlarm.setNextTriggerDate(nextDate);
+        helper.updateNextTriggerDate(triggeredAlarm);
 
-        //Creates new offset alarm structure
+        //Set up intent details
         Intent alarmIntent = new Intent(context, AlarmReceiver.class);
         alarmIntent.putExtra("name", name); //All the identifying information we need. Receiver can look up alarm to reset it.
         alarmIntent.putExtra("requestCode", requestCode); //All the identifying information we need. Receiver can look up alarm to reset it.
@@ -137,6 +141,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextDate.getTimeInMillis(), pendingIntent); //Set alarm to run at exact time of next trigger date
 
         //Log successfully set alarms for testing purposes
-        Log.d("test", "Restarted alarm '" + triggeredAlarm.toString() + "', will next trigger at " + triggeredAlarm.getNextTriggerDate());
+        Log.d("test", "-------------------------------------------");
+        Log.d("test", "Restarted alarm '" + triggeredAlarm.toString() + "' with request code '" + requestCode + "', will next trigger at " + triggeredAlarm.getNextTriggerDate());
+        Log.d("test", "-------------------------------------------");
     }
 }

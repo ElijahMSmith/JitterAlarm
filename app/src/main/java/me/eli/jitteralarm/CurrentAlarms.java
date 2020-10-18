@@ -45,6 +45,9 @@ public class CurrentAlarms extends Fragment {
         this.mainActivity = mainActivity;
     }
 
+    //Default, empty constructor
+    public CurrentAlarms(){}
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -99,6 +102,7 @@ public class CurrentAlarms extends Fragment {
             public void onClick(DialogInterface dialog, int id) {
                 //Delete from everything
                 deleteAlarm(alarmToDelete);
+                mainActivity.cancelAlarm(alarmToDelete);
                 dialog.dismiss();
                 Toast.makeText(context, "Alarm Deleted", Toast.LENGTH_SHORT).show();
             }
@@ -259,5 +263,10 @@ public class CurrentAlarms extends Fragment {
     //Used by AlarmDetailsDialogFragment to set the updated version of an alarm
     public void startAlarm(AlarmInfo editedAlarm){
         mainActivity.startAlarm(editedAlarm);
+    }
+
+    //Used by AlarmDetailsDialogFragment to cancel the old version of an updated alarm
+    protected void cancelAlarm(AlarmInfo oldAlarm){
+        mainActivity.cancelAlarm(oldAlarm);
     }
 }

@@ -19,7 +19,6 @@ import androidx.core.app.NotificationCompat;
 
 import java.util.GregorianCalendar;
 import java.util.Objects;
-import java.util.Random;
 
 import me.eli.jitteralarm.R;
 import me.eli.jitteralarm.MainActivity;
@@ -47,9 +46,10 @@ public class BootUpReceiver extends BroadcastReceiver {
         helper = new DatabaseHelper(context);
         for(AlarmInfo alarm : helper.getAllAlarms()){
             //Alarm already should have gone off, play missed alarm notification then reset alarm
-            if(System.currentTimeMillis() <= alarm.getCalendarFromNextTriggerDate().getTimeInMillis()){
+            if(System.currentTimeMillis() > alarm.getCalendarFromNextTriggerDate().getTimeInMillis()){
                 playExpiredAlarmNotification(alarm);
                 restartAlarm(alarm, true);
+            //Alarm hasn't missed it's trigger, set it for established trigger time
             } else {
                 restartAlarm(alarm, false);
             }
@@ -90,8 +90,9 @@ public class BootUpReceiver extends BroadcastReceiver {
     //Expired is true if the time this alarm was suppose to run already passed on a previous day, false otherwise
     public void restartAlarm(AlarmInfo alarmToSet, boolean expired){
         if(expired){ //If the time for this alarm has already passed (notification sent already), generate next trigger date and set it
-            GregorianCalendar nextDate = alarmToSet.generateTriggerDate();
+            GregorianCalendar nextDate = alarmToSet.generateTriggerDate(true);
             alarmToSet.setNextTriggerDate(nextDate);
+            helper.updateNextTriggerDate(alarmToSet);
         }
 
         //Schedule this alarm to trigger AlarmReceiver with correct name/requestCode information
@@ -105,7 +106,8 @@ public class BootUpReceiver extends BroadcastReceiver {
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmToSet.getCalendarFromNextTriggerDate().getTimeInMillis(), pendingIntent); //Set alarm to run at exact time of next trigger date
 
         //Log successfully set alarms for testing purposes
-        Log.d("test", "Restarted alarm " + alarmToSet.toString() + ", will next trigger at " + alarmToSet.getNextTriggerDate());
-
+        Log.d("test", "-------------------------------------------");
+        Log.d("test", "Restarted alarm '" + alarmToSet.toString() + "' with request code '" + requestCode + "', will next trigger at " + alarmToSet.getNextTriggerDate());
+        Log.d("test", "-------------------------------------------");
     }
 }
