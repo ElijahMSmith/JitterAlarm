@@ -47,6 +47,8 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         final View rootView = inflater.inflate(R.layout.custom_dialog, null);
 
+        Log.d("test", "originalState: '" + originalState.toString() + "'");
+
         //Get reference to components
         final SwitchMaterial dfSundaySwitch = rootView.findViewById(R.id.dfSundaySwitch);
         final SwitchMaterial dfMondaySwitch = rootView.findViewById(R.id.dfMondaySwitch);
@@ -122,19 +124,6 @@ public class AlarmDetailsDialogFragment extends DialogFragment {
                     //Refresh the adapter
                     alarmsList.updateAdapter();
                     Toast.makeText(rootView.getContext(), "Alarm updated!", Toast.LENGTH_SHORT).show();
-
-                    //TODO: Lots of weird shit going on here. Need to change adapter to display nextTriggerTime instead of alarmTime so I can get to the bottom of this.
-                    //It seems like everything is being changed just fine, but the logs aren't correct. Is anything actually wrong?
-                    //Make sure to test all the situations of alarm changing/resetting to figure out what's up
-                    //TODO: FOR SOME REASON THE NEXT TWO LOG STATEMENTS PRINT THE SAME, OLD VERSION OF THE ALARM
-                    //Problem appears to be the adapter not having the correct nextTriggerTime stored for the alarms,
-                            // so when they are passed in here to update/cancel, we print the wrong things, but when we look in db, that's all correct and in the end we do things right
-
-                    //For testing purposes
-                    Log.d("test", "-------------------------------------------");
-                    Log.d("test", "Cancelled/removed alarm '" + originalState.getAlarmName() + "' with request code '" + sp.getInt(originalState.getAlarmName(), -1) + "', set to trigger at " + originalState.getNextTriggerDate());
-                    Log.d("test", "Set/Replaced with alarm '" + withEdits.getAlarmName() + "' with request code '" + sp.getInt(withEdits.getAlarmName(), -1) + "', set to trigger at " + originalState.getNextTriggerDate());
-                    Log.d("test", "-------------------------------------------");
                 } //If our alarm isn't valid, we've already sent why to the Toast
 
                 dialog.dismiss(); //Now we exit the dialog

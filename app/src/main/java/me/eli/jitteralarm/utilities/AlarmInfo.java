@@ -22,6 +22,10 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
     private String nextTriggerDate;
     private boolean[] triggerDays; //What days the alarm will trigger. Index 0 = Sunday, 6 = Saturday
 
+    private final long HOUR_MILLIS = 1000 * 60 * 60;
+    private final long MINUTE_MILLIS = 1000 * 60;
+    private final long SECOND_MILLIS = 1000;
+
     //Set up our AlarmInfo object with initial data and trigger days in boolean array form
     public AlarmInfo(String alarmName, String alarmTime, String offsetTime, boolean[] triggerOnDay){
         this.alarmName = alarmName;
@@ -121,7 +125,7 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
     @NonNull
     @Override
     public String toString(){
-        return alarmName + "; " + alarmTime + "; " + offsetTime + "; " + getTriggerString();
+        return alarmName + "; " + alarmTime + "; " + offsetTime + "; " + getTriggerString() + "; " + nextTriggerDate;
     }
 
     //Checks if this alarm and another are exactly the same so that we can check for duplicates elsewhere.
@@ -144,8 +148,6 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
     //Uses the time, offset, and trigger dates to generate a new trigger time within the parameters
     //Return this trigger time in Gregorian Calendar form
     public GregorianCalendar generateTriggerDate(boolean alreadyTriggeredToday){
-
-        //TODO: UPDATE INTERVAL GENERATION TO MATCH HELPER METHOD'S VERSION. CURRENTLY, IF INTERVAL ONLY PROVIDES H/M/S, it only picks random H/M/S and not ANY combination still in that interval
 
         //If we don't have any days set to trigger this alarm, the alarm is dormant and we make everything null to signify this
         if(!areAnyTriggerDays())
@@ -183,12 +185,16 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         int maxOffsetMinutes = Integer.parseInt(offsetParts[1]);
         int maxOffsetSeconds = Integer.parseInt(offsetParts[2]);
 
-        //Generates a number between -maxOffsetHours and maxOffsetHours to use as hour offset for alarm
-        //Minutes and seconds work the exact same way
-        cal.add(GregorianCalendar.HOUR, (int)(Math.random() * (2 * maxOffsetHours + 1)) - maxOffsetHours);
-        cal.add(GregorianCalendar.MINUTE, (int)(Math.random() * (2 * maxOffsetMinutes + 1)) - maxOffsetMinutes);
-        cal.add(GregorianCalendar.SECOND, (int)(Math.random() * (2 * maxOffsetSeconds + 1)) - maxOffsetSeconds);
-        return cal;
+        //Generates the entire length of our interval
+        long intervalInMillis = maxOffsetHours * HOUR_MILLIS + maxOffsetMinutes * MINUTE_MILLIS + maxOffsetSeconds * SECOND_MILLIS;
+        intervalInMillis/=2; //Take half our total interval
+
+        //Select random amount of time in our half interval, make it randomly positive or negative
+        long randomPoint = (Math.random() >= .5 ? -1 : 1) * (long)(Math.random() * intervalInMillis);
+
+        //Add this random point in our interval to the base time stored in cal for our alarm trigger time
+        cal.setTimeInMillis(cal.getTimeInMillis() + randomPoint);
+        return cal; //Return our new trigger time
     }
 
     //Called if today is a trigger day, generate a time that is in the interval and hasn't already passed, return that for use
@@ -273,49 +279,5 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
         //Return null if this doesn't work. As long as we keep formatting consistent, should be no problems with any exceptions/nulls
         return null;
     }
-
-    //TODO: START TO IMPLEMENT THIS SHIT
-
-    /*
-
-    Calendar -> String -> Calendar code for reference
-
-    GregorianCalendar calendar = new GregorianCalendar();
-    // Creating an object of SimpleDateFormat
-    SimpleDateFormat formattedDate
-            = new SimpleDateFormat(PATTERN, Locale.US);
-
-    // Use format() method to change the format
-    // Using getTime() method,
-    // this required date is passed
-    // to format() method
-    String dateFormatted = formattedDate.format(calendar.getTime());
-
-    // Displaying grogorian date ia SimpleDateFormat
-    System.out.println(dateFormatted);
-
-    SimpleDateFormat fmt = new SimpleDateFormat(PATTERN);
-    Date date = null;
-    try {
-        date = fmt.parse(dateFormatted);
-        GregorianCalendar cal = (GregorianCalendar) GregorianCalendar.getInstance();
-        cal.setTime(date);
-
-        formattedDate
-                = new SimpleDateFormat(PATTERN, Locale.US);
-
-        // Use format() method to change the format
-        // Using getTime() method,
-        // this required date is passed
-        // to format() method
-        dateFormatted = formattedDate.format(calendar.getTime());
-
-        // Displaying grogorian date ia SimpleDateFormat
-        System.out.println(dateFormatted);
-    } catch (ParseException e) {
-        e.printStackTrace();
-    }
-
-     */
 
 }

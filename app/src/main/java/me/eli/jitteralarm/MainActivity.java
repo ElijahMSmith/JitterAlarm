@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Log successfully set alarms for testing purposes
         Log.d("test", "-------------------------------------------");
-        Log.d("test", "Started alarm '" + alarmToStart.toString() + "' with request code '" + requestCode + "' that will next trigger at " + alarmToStart.getNextTriggerDate());
+        Log.d("test", "Started alarm '" + alarmToStart.toString() + "' with request code '" + requestCode + "'");
         Log.d("test", "-------------------------------------------");
 
     }

@@ -68,6 +68,14 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
             @Override
             public void onClick(View v) {
                 //Set button to send us to the edit dialog AlarmDetailsDialogFragment through CurrentAlarms fragment method
+
+                //Updates stored alarms in the adapter to reflect their current nextTriggerDate
+                    //This allows us to pass a fully up-to-date alarm object to our editing dialog
+                    //This action doesn't change anything for the user's side. The exact nextTriggerDate
+                    //is never shown to them (right now), but this allows debug logging to display proper info
+                    //Alarms that trigger and reset with a new randomly chosen offset don't update the adapter by default
+                    //since there's no guarantee the app will be running. This way, we can always be sure it's up-to-date when we need it.
+                updateAlarmSet();
                 alarmsListFrag.openEditDialog(alarmSet.get(position));
             }
         });
@@ -98,7 +106,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.ViewHolder
     //Updates alarmSet list to reflect whatever change was made to the database
     public void updateAlarmSet(){
         //Retrieve the up-to-date set of alarms from our db and assign that to our alarmSet reference
-        alarmSet = helper.getAllAlarms(); //Our out of data alarmSet can now be garbage collected
+        alarmSet = helper.getAllAlarms(); //Our out of date alarmSet can now be garbage collected
         notifyDataSetChanged(); //Update to reflect the changes in our adapter
     }
 

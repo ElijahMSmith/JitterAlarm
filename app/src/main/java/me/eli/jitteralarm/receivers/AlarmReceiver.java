@@ -142,7 +142,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         //Log successfully set alarms for testing purposes
         Log.d("test", "-------------------------------------------");
-        Log.d("test", "Restarted alarm '" + triggeredAlarm.toString() + "' with request code '" + requestCode + "', will next trigger at " + triggeredAlarm.getNextTriggerDate());
+        Log.d("test", "Set to run alarm '" + triggeredAlarm.toString() + "' with request code '" + requestCode + "'");
         Log.d("test", "-------------------------------------------");
     }
 }

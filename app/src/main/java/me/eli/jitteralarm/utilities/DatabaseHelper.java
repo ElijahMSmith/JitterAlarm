@@ -97,7 +97,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + ALARM_NAME + " = '" + alarm.getAlarmName() + "'");
         db.close();
 
-        Log.d("test", "Deleted alarm '" + alarm.toString() + "' that was set to next trigger at " + alarm.getNextTriggerDate() + ", printing contents...");
+        Log.d("test", "Deleted alarm '" + alarm.toString() + "', printing contents...");
         printAlarmList();
     }
 
@@ -153,7 +153,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("UPDATE " + TABLE_NAME + " SET " + NEXT_TRIGGER_DATE + "='" + alarm.getNextTriggerDate() + "' WHERE " + ALARM_NAME + "='" + alarm.getAlarmName() + "'");
         db.close();
 
-        Log.d("test", "Updated alarm '" + alarm.toString() + "' to new trigger date of " + alarm.getNextTriggerDate() + ", printing db contents...");
+        Log.d("test", "Updated trigger date of alarm '" + alarm.toString() + "', printing db contents...");
         printAlarmList();
         return true;
     }
@@ -163,7 +163,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         Log.d("test", "DB LIST ------------------");
         for(AlarmInfo alarm : newAlarmsList)
-            Log.d("test", "Alarm '" + alarm.toString() + "', next triggers at " + alarm.getNextTriggerDate());
+            Log.d("test", "'" + alarm.toString() + "'");
         Log.d("test", "--------------------------");
     }
 
